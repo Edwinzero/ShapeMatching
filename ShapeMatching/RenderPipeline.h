@@ -10,6 +10,8 @@
 #include <camera.h>
 #include <CLutils.h>
 
+#include <FastGlobalRegistration.h>
+
 using namespace std;
 unsigned int screenWidth = 800;
 unsigned int screenHeight = 800;
@@ -101,12 +103,19 @@ void DrawScene() {
 		glMatrixMode(GL_PROJECTION);
 		glPushMatrix();
 		glLoadIdentity();
-		glOrtho(0.0f, screenWidth, screenWidth, 0.0f, -1.0f, +1.0f);
+		glOrtho(0.0f, screenWidth,  0.0f, screenHeight, -1.0f, +1.0f);
 		glMatrixMode(GL_MODELVIEW);
 		glPushMatrix();
 		glLoadIdentity();
-		
-		
+
+		// Draw a triangle at 0.5 z
+		glBegin(GL_TRIANGLES);
+		glColor3f(1.0f, 0.0f, 0.0f);
+		glVertex3f(50.5, 50.5, 0.5);
+		glVertex3f(550.5, 50.5, 0.5);
+		glVertex3f(550.0, 150.5, 0.5);
+		glEnd();
+
 		glDisableClientState(GL_COLOR_ARRAY);
 		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 		glDisableClientState(GL_VERTEX_ARRAY);
@@ -173,46 +182,26 @@ void Render(void)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	glMultMatrixf(&camera.Mat()[0][0]);
+	//glMultMatrixf(&camera.Mat()[0][0]);
 	glEnable(GL_DEPTH_TEST);
-	
 
-	if(0){
-		glEnable(GL_DEPTH_TEST);
-		glMatrixMode(GL_PROJECTION);
-		glPushMatrix();
-		glLoadIdentity();
-		float ratio = 1.0f* screenWidth / screenHeight;
-		gluPerspective(45, ratio, 1.0f, 10000.0f);
-
-		// add code here to draw scene objects
+	if (1) {
+		// draw scene
 		glMatrixMode(GL_MODELVIEW);
 		glPushMatrix();
-		glTranslatef(0.0, 100.0, 0.0);
-		glColor3f(1.0, 0.2, 0.4);
-		//glutSolidTeapot(100.0);
+		DrawScene();
 		glMatrixMode(GL_MODELVIEW);
-		glPopMatrix();
-
-		// default coord grids
-		glMatrixMode(GL_MODELVIEW);
-		glPushMatrix();
-		{
-			glLineWidth(2.0);
-			DrawCoord();
-			glColor3f(0, 1, 0);
-			glVertex3f(0, 0, 0);
-			glVertex3f(0, 500, 0);
-			glEnd();
-		}
-		glMatrixMode(GL_MODELVIEW);
-		glPopMatrix();
-
-		glMatrixMode(GL_PROJECTION);
 		glPopMatrix();
 	}
 
-	if(1){
+	glBegin(GL_TRIANGLES);
+	glColor3f(1.0f, 0.0f, 0.0f);
+	glVertex3f(-0.5, -0.5, 0.5);
+	glVertex3f(0.5, -0.5, 0.5);
+	glVertex3f(0.0, 0.5, 0.5);
+	glEnd();
+
+	if(0){
 		// draw gui, seems unnecessary to push/pop matrix and attributes
 		//glPushAttrib(GL_ALL_ATTRIB_BITS);
 		glMatrixMode(GL_MODELVIEW);
@@ -223,6 +212,7 @@ void Render(void)
 		//glPopAttrib();
 	}
 
+	glFlush();
 	glutSwapBuffers();
 	glutPostRedisplay();
 }
@@ -256,8 +246,9 @@ void Reshape(int w, int h)
 	//glMatrixMode(GL_PROJECTION);
 	//glViewport(0, 0, width, height);
 	//glLoadIdentity();
-	glOrtho(0.f, w, 0.f, h, -1.f, 1.f);
-
+	//glOrtho(0.f, w, 0.f, h, -1.f, 1.f);
+	//glOrtho(-2.0, 2.0, -2.0, 2.0, -2.0, 2.0);
+	//glOrtho(0.f, w, 0.f, h, -1.f, 1.f);
 	glutPostRedisplay();
 }
 

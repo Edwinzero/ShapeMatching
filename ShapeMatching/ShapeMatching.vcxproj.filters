@@ -16,6 +16,15 @@
     <Filter Include="Resource Files\IMGUI">
       <UniqueIdentifier>{3ffc1d6d-3ca9-4a78-9c7c-160c7151da52}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Reigstration">
+      <UniqueIdentifier>{d6be3abf-9b99-4a0a-9d51-e30cc11b5a80}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Feature">
+      <UniqueIdentifier>{fafdc2fe-9f36-4872-a6c2-c7ab57401793}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Corresponedence">
+      <UniqueIdentifier>{792a423a-1adc-4768-aa29-182c215bdac6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -64,6 +73,12 @@
     </ClInclude>
     <ClInclude Include="CLutils.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FastGlobalRegistration.h">
+      <Filter>Header Files\Reigstration</Filter>
+    </ClInclude>
+    <ClInclude Include="FPFH.h">
+      <Filter>Header Files\Corresponedence</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

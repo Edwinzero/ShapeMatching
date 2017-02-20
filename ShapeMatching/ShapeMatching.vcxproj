@@ -40,7 +40,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v100</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
@@ -81,11 +81,11 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include;C:\GLWrappers\opencv\build\include;$(SolutionDir);$(ProjectDir)imgui;$(ProjectDir);$(SolutionDir)Depends\libjpeg-turbo;$(SolutionDir)Depends\glm;$(SolutionDir)Depends\OpenGL;$(SolutionDir)Depends;$(SolutionDir)Depends\imgui\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\GLWrappers\flann\include;C:\GLWrappers\eigen-5.2.6;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include;C:\GLWrappers\opencv\build\include;$(SolutionDir);$(ProjectDir)imgui;$(ProjectDir);$(SolutionDir)Depends\libjpeg-turbo;$(SolutionDir)Depends\glm;$(SolutionDir)Depends\OpenGL;$(SolutionDir)Depends;$(SolutionDir)Depends\imgui\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>C:\GLWrappers\opencv\build\x64\vc10\lib;$(SolutionDir)Depends;$(SolutionDir)Depends\OpenGL\lib\x86_64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;freeglutd.lib;glew64.lib;SOIL.lib;opencv_core2411d.lib;opencv_imgproc2411d.lib;opencv_highgui2411d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\GLWrappers\flann\lib;C:\GLWrappers\opencv\build\x64\vc10\lib;$(SolutionDir)Depends;$(SolutionDir)Depends\OpenGL\lib\x86_64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opengl32.lib;freeglutd.lib;glew64.lib;SOIL.lib;opencv_core2411d.lib;opencv_imgproc2411d.lib;opencv_highgui2411d.lib;flann.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -124,6 +124,8 @@
   <ItemGroup>
     <ClInclude Include="camera.h" />
     <ClInclude Include="CLutils.h" />
+    <ClInclude Include="FastGlobalRegistration.h" />
+    <ClInclude Include="FPFH.h" />
     <ClInclude Include="IMGUI\imconfig.h" />
     <ClInclude Include="IMGUI\imgui.h" />
     <ClInclude Include="IMGUI\imgui_impl_glut.h" />
