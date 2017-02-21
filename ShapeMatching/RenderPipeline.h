@@ -201,7 +201,7 @@ void Render(void)
 	glVertex3f(0.0, 0.5, 0.5);
 	glEnd();
 
-	if(0){
+	if(1){
 		// draw gui, seems unnecessary to push/pop matrix and attributes
 		//glPushAttrib(GL_ALL_ATTRIB_BITS);
 		glMatrixMode(GL_MODELVIEW);
