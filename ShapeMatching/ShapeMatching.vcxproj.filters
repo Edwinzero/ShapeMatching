@@ -80,6 +80,9 @@
     <ClInclude Include="FPFH.h">
       <Filter>Header Files\Corresponedence</Filter>
     </ClInclude>
+    <ClInclude Include="ModelLoader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="IMGUI\imgui.ini">

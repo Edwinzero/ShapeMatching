@@ -335,7 +335,105 @@ inline void FastGlobalReg::NormalizePoints()
 inline double FastGlobalReg::OptimizePairwise(bool decrease_mu, int numIter)
 {
 	printf("[FGR] Pairwise rigid pose optimization\n");
-	return 0.0;
+	double miu;
+	int nIter = numIter;
+	resTransform = Eigen::Matrix4f::Identity();
+	miu = startScale;
+
+	int src = 0;  // src
+	int dst = 1;	// dst
+
+	// make another copy of points[d];
+	vector<Vector3f> pdst_copy;
+	int npdst = points[dst].size();
+	for (int i = 0; i < npdst; i++) {
+		pdst_copy[i] = points[dst][i];
+	}
+	if (correspondence.size() < 10) { return -1.0; }
+
+	std::vector<double> lpq(correspondence.size(), 1.0);	// lpq initial to all 1
+	Eigen::Matrix4f trans = Eigen::Matrix4f::Identity();	// temp res
+	const int nvariable = 6;
+	for (int i = 0; i < numIter; i++) {
+		// graduated non-convexity
+		if (decrease_mu) {
+			if (i % 4 == 0 && miu > MAX_CORR_DIST) {
+				miu /= DIV_FACTOR;
+			}
+		}
+
+		Eigen::MatrixXd JTJ(nvariable, nvariable);
+		Eigen::MatrixXd JTr(nvariable, 1);
+		Eigen::MatrixXd J(nvariable, 1);
+		JTJ.setZero();
+		JTr.setZero();
+
+		double r;
+		double r2 = 0.0;
+		for (int c = 0; c < correspondence.size(); c++) {
+			int ii = correspondence[c].first;
+			int jj = correspondence[c].second;
+			Eigen::Vector3f p = points[src][ii];
+			Eigen::Vector3f q = pdst_copy[jj];
+			Eigen::Vector3f rpq = p - q;
+
+			// compute lpq for sample c
+			float sqrt_lpq = miu / (rpq.dot(rpq) + miu);
+			lpq[c] = sqrt_lpq * sqrt_lpq;
+
+			// set parameters for Jacobian matrix
+			J.setZero();
+			J(1) = -q(2);
+			J(2) = q(1);
+			J(3) = -1;
+			r = rpq(0);
+			JTJ += J * J.transpose() * lpq[c];
+			JTr += J * r * lpq[c];
+			r2 += r * r * lpq[c];
+
+			J.setZero();
+			J(0) = q(2);
+			J(2) = -q(0);
+			J(4) = -1;
+			r = rpq(1);
+			JTJ += J * J.transpose() * lpq[c];
+			JTr += J * r * lpq[c];
+			r2 += r * r * lpq[c];
+		
+			J.setZero();
+			J(0) = -q(1);
+			J(1) = q(0);
+			J(5) = -1;
+			r = rpq(2);
+			JTJ += J * J.transpose() * lpq[c];
+			JTr += J * r * lpq[c];
+			r2 += r * r * lpq[c];
+
+			r2 += (miu * (1.0 - sqrt(lpq[c])) * (1.0 - sqrt(lpq[c])));
+		}// end construct linear system
+
+		Eigen::MatrixXd result(nvariable, 1);
+		result = -JTJ.llt().solve(JTr);
+
+		Eigen::Affine3d affmat;
+		affmat.linear() = (Eigen::Matrix3d)Eigen::AngleAxisd(result(2), Eigen::Vector3d::UnitZ()) *
+			Eigen::AngleAxisd(result(1), Eigen::Vector3d::UnitY()) *
+			Eigen::AngleAxisd(result(0), Eigen::Vector3d::UnitX());
+		affmat.translation() = Eigen::Vector3d(result(3), result(4), result(5));
+		Eigen::Matrix4f delta = affmat.matrix().cast<float>();		// use cast to transfer double to float
+
+		trans = delta * trans;
+
+		// transform point cloud
+		Eigen::Matrix3f R = delta.block<3, 3>(0, 0);
+		Eigen::Vector3f t = delta.block<3, 1>(0, 3);
+		for (int cnt = 0; cnt < npdst; cnt++) {
+			pdst_copy[cnt] = R * pdst_copy[cnt] + t;
+		}
+	}
+
+	resTransform = trans * resTransform;
+	return miu;
 }
 
 inline Matrix4f FastGlobalReg::GetRes()
