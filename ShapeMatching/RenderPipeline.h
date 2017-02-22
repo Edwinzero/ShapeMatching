@@ -9,6 +9,7 @@
 #include "imgui_impl_glut.h"
 #include <camera.h>
 #include <CLutils.h>
+#include <ModelLoader.h>
 
 #include <FastGlobalRegistration.h>
 
@@ -22,7 +23,9 @@ bool show_test_window = false;
 bool show_another_window = false;
 
 Camera camera;
-
+std::vector<Vector3f> points0, points1;
+std::vector<Vector3f> normals0, normals1;
+FastGlobalReg fgr;
 
 //=========================================================================
 //		OpenGL VBO wrapper
@@ -91,7 +94,7 @@ void DrawVBO(GLuint &vbo) {
 	glDisableClientState(GL_VERTEX_ARRAY);
 }
 
-void DrawScene() {
+void DrawScene2D() {
 	{
 		//glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_TRANSFORM_BIT);
 		glDisable(GL_DEPTH_TEST);
@@ -122,6 +125,75 @@ void DrawScene() {
 		glMatrixMode(GL_PROJECTION);
 		glPopMatrix();
 		glMatrixMode(GL_MODELVIEW);
+		glPopMatrix();
+		//glPopAttrib();
+	}
+}
+
+void DrawScene3D() {
+	{
+		//glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_TRANSFORM_BIT);
+		glEnable(GL_DEPTH_TEST);
+		// Setup viewport, orthographic projection matrix
+		glViewport(0, 0, (GLsizei)screenWidth, (GLsizei)screenHeight);
+		glMatrixMode(GL_PROJECTION);
+		glPushMatrix();
+		glLoadIdentity();
+		gluPerspective(45.0, (GLdouble)screenWidth / (GLdouble)screenHeight, 1.0, 10000.0);
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+		glMultMatrixf(&camera.Mat()[0][0]);
+
+		// default coord grids
+		glMatrixMode(GL_MODELVIEW);
+		glPushMatrix();
+		{
+			glLineWidth(2.0);
+			DrawCoord();
+			glColor3f(0, 1, 0);
+			glVertex3f(0, 0, 0);
+			glVertex3f(0, 500, 0);
+			glEnd();
+		}
+		glMatrixMode(GL_MODELVIEW);
+		glPopMatrix();
+
+		// Point cloud data
+		glMatrixMode(GL_MODELVIEW);
+		glPushMatrix();
+		if (points0.size()) {
+			glEnableClientState(GL_VERTEX_ARRAY);
+			//glEnableClientState(GL_COLOR_ARRAY);
+			glColor3f(1.0f, 0.0f, 0.0f);
+			glScalef(50.0f, 50.0f, 50.0f);
+			glVertexPointer(3, GL_FLOAT, sizeof(GLfloat) * 3, points0.data());
+			//glColorPointer(3, GL_FLOAT, sizeof(GLfloat) * 3, pc0.normals.data());
+			glDrawArrays(GL_POINTS, 0, points0.size());
+
+			//glDisableClientState(GL_COLOR_ARRAY);
+			glDisableClientState(GL_VERTEX_ARRAY);
+		}
+		glMatrixMode(GL_MODELVIEW);
+		glPopMatrix();
+		glMatrixMode(GL_MODELVIEW);
+		glPushMatrix();
+		if (points1.size()) {
+			glEnableClientState(GL_VERTEX_ARRAY);
+			//glEnableClientState(GL_COLOR_ARRAY);
+			glColor3f(0.0f, 1.0f, 0.0f);
+			glScalef(50.0f, 50.0f, 50.0f);
+			//glLoadMatrixf()
+			glVertexPointer(3, GL_FLOAT, sizeof(GLfloat) * 3, points1.data());
+			//glColorPointer(3, GL_FLOAT, sizeof(GLfloat) * 3, pc1.normals.data());
+			glDrawArrays(GL_POINTS, 0, points1.size());
+
+			//glDisableClientState(GL_COLOR_ARRAY);
+			glDisableClientState(GL_VERTEX_ARRAY);
+		}
+		glMatrixMode(GL_MODELVIEW);
+		glPopMatrix();
+
+		glMatrixMode(GL_PROJECTION);
 		glPopMatrix();
 		//glPopAttrib();
 	}
@@ -182,24 +254,24 @@ void Render(void)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	//glMultMatrixf(&camera.Mat()[0][0]);
 	glEnable(GL_DEPTH_TEST);
 
 	if (1) {
-		// draw scene
+		// draw 2D scene
 		glMatrixMode(GL_MODELVIEW);
 		glPushMatrix();
-		DrawScene();
+		DrawScene2D();
 		glMatrixMode(GL_MODELVIEW);
 		glPopMatrix();
 	}
-
-	glBegin(GL_TRIANGLES);
-	glColor3f(1.0f, 0.0f, 0.0f);
-	glVertex3f(-0.5, -0.5, 0.5);
-	glVertex3f(0.5, -0.5, 0.5);
-	glVertex3f(0.0, 0.5, 0.5);
-	glEnd();
+	if (1) {
+		// draw 3D scene
+		glMatrixMode(GL_MODELVIEW);
+		glPushMatrix();
+		DrawScene3D();
+		glMatrixMode(GL_MODELVIEW);
+		glPopMatrix();
+	}
 
 	if(1){
 		// draw gui, seems unnecessary to push/pop matrix and attributes
@@ -429,7 +501,11 @@ void Init_Imgui(void) {
 }
 
 void Init_RenderScene(void) {
-
+	PLYModelLoader pc0, pc1;
+	pc0.LoadModel("Depth_0000.ply");
+	pc1.LoadModel("Depth_0001.ply");
+	pc0.CopyToBuffer(points0, normals0);
+	pc1.CopyToBuffer(points1, normals1);
 }
 
 //=========================================================================

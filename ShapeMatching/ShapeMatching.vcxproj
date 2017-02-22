@@ -86,6 +86,7 @@
     <Link>
       <AdditionalLibraryDirectories>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\lib\x64;C:\GLWrappers\flann\lib;E:\GLWrappers\opencv\build\x64\vc10\lib;C:\GLWrappers\opencv\build\x64\vc10\lib;$(SolutionDir)Depends;$(SolutionDir)Depends\OpenGL\lib\x86_64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>opengl32.lib;freeglutd.lib;glew64.lib;SOIL.lib;opencv_core2411d.lib;opencv_imgproc2411d.lib;opencv_highgui2411d.lib;flann.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

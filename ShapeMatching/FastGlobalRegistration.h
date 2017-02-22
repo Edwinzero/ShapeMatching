@@ -34,6 +34,7 @@ public:
 public:
 	void LoadFeature(const vector<Vector3f> &points, const vector<VectorXf> &features);
 	void ReadFeature(const char *filepath);
+	void LoadCorrespondence(const vector<Vector3f> &points);
 	void AdvancedMatching();
 	void NormalizePoints();
 	double OptimizePairwise(bool decrease_mu, int numIter);
@@ -63,6 +64,15 @@ inline void FastGlobalReg::LoadFeature(const vector<Vector3f>& points, const vec
 	printf("[FGR] Load Featrue...\n");
 	this->points.push_back(points);
 	this->features.push_back(features);
+}
+
+inline void FastGlobalReg::LoadCorrespondence(const vector<Vector3f> &points) {
+	int size = points.size();
+	correspondence.clear();
+	correspondence.resize(size);
+	for (int i = 0; i < size; i++) {
+		correspondence[i] = std::pair<int, int>(i, i);
+	}
 }
 
 // Correspondence test (3 steps)
