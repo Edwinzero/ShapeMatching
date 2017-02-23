@@ -8,6 +8,8 @@
 #include "imgui.h"
 #include "imgui_impl_glut.h"
 #include <camera.h>
+#include <GLobjects.h>
+#include <RenderUtils.h>
 #include <CLutils.h>
 #include <Eigen_op.h>
 #include <ModelLoader.h>
@@ -30,20 +32,8 @@ bool doRegistration = false;
 FastGlobalReg fgr;
 Eigen::Matrix4f optMat;
 
-//=========================================================================
-//		OpenGL VBO wrapper
-//=========================================================================
-void CreateVBO(GLuint *vbo){
-	//create vertex buffer object
-	glGenBuffers(1, vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, *vbo);
-	
-	//initialise VBO
-	unsigned int size = screenWidth * screenHeight * sizeof(cl_float3);
-	glBufferData(GL_ARRAY_BUFFER, size, 0, GL_DYNAMIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
-
+GLuint GLPointRenderProgram;
+GLmem object0, object1;
 
 //================================
 // default draw event
@@ -83,20 +73,6 @@ void DrawCoord() {
 //=========================================================================
 //		Draw methods
 //=========================================================================
-void DrawVBO(GLuint &vbo) {
-	//clear all pixels, then render from the vbo
-	glClear(GL_COLOR_BUFFER_BIT);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glVertexPointer(2, GL_FLOAT, 16, 0); // size (2, 3 or 4), type, stride, pointer
-	glColorPointer(4, GL_UNSIGNED_BYTE, 16, (GLvoid*)8); // size (3 or 4), type, stride, pointer
-
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState(GL_COLOR_ARRAY);
-	glDrawArrays(GL_POINTS, 0, screenWidth * screenHeight);
-	glDisableClientState(GL_COLOR_ARRAY);
-	glDisableClientState(GL_VERTEX_ARRAY);
-}
-
 void DrawScene2D() {
 	{
 		//glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_TRANSFORM_BIT);
@@ -165,6 +141,20 @@ void DrawScene3D() {
 		glMatrixMode(GL_MODELVIEW);
 		glPushMatrix();
 		if (points0.size()) {
+			glUseProgram(GLPointRenderProgram);
+			glm::mat4 proj = glm::mat4(1.0f);
+			glm::mat4 view = glm::mat4(1.0f);
+			glGetFloatv(GL_PROJECTION_MATRIX, glm::value_ptr(proj));
+			glGetFloatv(GL_MODELVIEW_MATRIX, glm::value_ptr(view));
+			glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "proj"), 1, GL_FALSE, &proj[0][0]);
+			glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "view"), 1, GL_FALSE, &view[0][0]);
+			glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "model"), 1, GL_FALSE, optMat.data());
+			glBindVertexArray(object0.vao);
+			glDrawArrays(GL_POINTS, 0, object0.m_numVerts);
+			glBindVertexArray(0);
+
+			glUseProgram(0);
+			/*
 			glEnableClientState(GL_VERTEX_ARRAY);
 			//glEnableClientState(GL_COLOR_ARRAY);
 			glColor3f(1.0f, 0.0f, 0.0f);
@@ -174,12 +164,13 @@ void DrawScene3D() {
 
 			//glDisableClientState(GL_COLOR_ARRAY);
 			glDisableClientState(GL_VERTEX_ARRAY);
+			//*/
 		}
 		glMatrixMode(GL_MODELVIEW);
 		glPopMatrix();
 		glMatrixMode(GL_MODELVIEW);
 		glPushMatrix();
-		if (points1.size()) {
+		if (!points1.size()) {
 			glEnableClientState(GL_VERTEX_ARRAY);
 			//glEnableClientState(GL_COLOR_ARRAY);
 			glColor3f(0.0f, 1.0f, 0.0f);
@@ -257,18 +248,18 @@ void Render(void)
 	glEnable(GL_DEPTH_TEST);
 
 	if (1) {
-		// draw 2D scene
-		glMatrixMode(GL_MODELVIEW);
-		glPushMatrix();
-		DrawScene2D();
-		glMatrixMode(GL_MODELVIEW);
-		glPopMatrix();
-	}
-	if (1) {
 		// draw 3D scene
 		glMatrixMode(GL_MODELVIEW);
 		glPushMatrix();
 		DrawScene3D();
+		glMatrixMode(GL_MODELVIEW);
+		glPopMatrix();
+	} 
+	if (1) {
+		// draw 2D scene
+		glMatrixMode(GL_MODELVIEW);
+		glPushMatrix();
+		DrawScene2D();
 		glMatrixMode(GL_MODELVIEW);
 		glPopMatrix();
 	}
@@ -463,7 +454,12 @@ void MouseMoveCallback(int x, int y)
 //=========================================================================
 //		Initialize platforms
 //=========================================================================
-
+void Init_GLshader(void) {
+	std::vector<char> vert, frag;
+	LoadGLShaderFromFile(vert, "Shaders/PointRender.vs");
+	LoadGLShaderFromFile(frag, "Shaders/PointRender.fs");
+	GLPointRenderProgram = CompileGLShader("PointRender", vert.data(), frag.data());
+}
 // initialize ogl and imgui
 void Init_OpenGL(int argc, char **argv, const char* title)
 {
@@ -479,6 +475,18 @@ void Init_OpenGL(int argc, char **argv, const char* title)
 	glutInitWindowPosition(200, 200);
 	glutCreateWindow(title);
 	fprintf(stdout, "INFO: OpenGL Version: %s\n", glGetString(GL_VERSION));
+
+	// glew
+	GLenum err = glewInit();
+	if (GLEW_OK != err)
+	{
+		fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
+		getchar();
+		return;
+	}
+
+	// shaders
+	Init_GLshader();
 
 	// virtual camera
 	{
@@ -500,20 +508,6 @@ void Init_OpenGL(int argc, char **argv, const char* title)
 	glutMouseWheelFunc(MouseWheel);
 	glutMotionFunc(MouseDragCallback);
 	glutPassiveMotionFunc(MouseMoveCallback);
-
-	glewInit();
-}
-
-void Init_OpenCL(void) {
-
-
-}
-
-void Init_Imgui(void) {
-	//glClearColor(0.447f, 0.565f, 0.604f, 1.0f);
-	//glClear(GL_COLOR_BUFFER_BIT);
-
-	ImGui_ImplGLUT_Init();
 }
 
 void Init_RenderScene(void) {
@@ -526,18 +520,33 @@ void Init_RenderScene(void) {
 	ScalePoints(points1, 50.0f);
 	AffineTransformPointsFromAngle(points0, Eigen::Vector3f(20.0f, -50.0f, 70.0f), Eigen::Vector3f(-50.5f, +50.2f, -50.7f));
 
+	CreateGLmem(object0, points0, normals0);
+	CreateGLmem(object1, points1, normals1);
+
 	fgr.LoadPoints(points0, points1);
 	fgr.LoadCorrespondence(points0);
 	optMat = Eigen::Matrix4f::Identity();
 }
 
+void Init_OpenCL(void) {
+
+
+}
+
+void Init_Imgui(void) {
+	//glClearColor(0.447f, 0.565f, 0.604f, 1.0f);
+	//glClear(GL_COLOR_BUFFER_BIT);
+	ImGui_ImplGLUT_Init();
+}
+
 //=========================================================================
 //		Run Mainloop
 //=========================================================================
-void Run_Render(int argc, char **argv, const char* title) {
-	Init_OpenCL();
-	Init_RenderScene();
+void Run_Render(int argc, char **argv, const char* title){ 
 	Init_OpenGL(argc, argv, title);
+	Init_RenderScene();
+	Init_OpenCL();
+	Init_GLshader();
 	Init_Imgui();
 
 	glutMainLoop();

@@ -28,6 +28,12 @@
     <Filter Include="Header Files\Utils">
       <UniqueIdentifier>{a177ca7c-3d9f-4050-8055-563327626e8e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{05d28844-505c-4181-b073-fb3e904b07da}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Kernels">
+      <UniqueIdentifier>{4a5ff293-92dc-47b0-b56d-d79b5bb48961}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -87,6 +93,12 @@
       <Filter>Header Files\Utils</Filter>
     </ClInclude>
     <ClInclude Include="Eigen_op.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="GLobjects.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderUtils.h">
       <Filter>Header Files\Utils</Filter>
     </ClInclude>
   </ItemGroup>

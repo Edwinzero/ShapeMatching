@@ -129,6 +129,7 @@
     <ClInclude Include="Eigen_op.h" />
     <ClInclude Include="FastGlobalRegistration.h" />
     <ClInclude Include="FPFH.h" />
+    <ClInclude Include="GLobjects.h" />
     <ClInclude Include="IMGUI\imconfig.h" />
     <ClInclude Include="IMGUI\imgui.h" />
     <ClInclude Include="IMGUI\imgui_impl_glut.h" />
@@ -138,6 +139,7 @@
     <ClInclude Include="IMGUI\stb_truetype.h" />
     <ClInclude Include="ModelLoader.h" />
     <ClInclude Include="RenderPipeline.h" />
+    <ClInclude Include="RenderUtils.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="IMGUI\imgui.ini" />
