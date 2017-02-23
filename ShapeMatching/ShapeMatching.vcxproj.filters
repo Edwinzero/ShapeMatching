@@ -25,6 +25,9 @@
     <Filter Include="Header Files\Corresponedence">
       <UniqueIdentifier>{792a423a-1adc-4768-aa29-182c215bdac6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Utils">
+      <UniqueIdentifier>{a177ca7c-3d9f-4050-8055-563327626e8e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -81,7 +84,10 @@
       <Filter>Header Files\Corresponedence</Filter>
     </ClInclude>
     <ClInclude Include="ModelLoader.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Eigen_op.h">
+      <Filter>Header Files\Utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

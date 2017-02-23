@@ -35,6 +35,7 @@ public:
 	void LoadFeature(const vector<Vector3f> &points, const vector<VectorXf> &features);
 	void ReadFeature(const char *filepath);
 	void LoadCorrespondence(const vector<Vector3f> &points);
+	void LoadPoints(const vector<Vector3f> &src, const vector<Vector3f> &dst);
 	void AdvancedMatching();
 	void NormalizePoints();
 	double OptimizePairwise(bool decrease_mu, int numIter);
@@ -66,12 +67,29 @@ inline void FastGlobalReg::LoadFeature(const vector<Vector3f>& points, const vec
 	this->features.push_back(features);
 }
 
+// only work when src = dst
 inline void FastGlobalReg::LoadCorrespondence(const vector<Vector3f> &points) {
 	int size = points.size();
 	correspondence.clear();
 	correspondence.resize(size);
 	for (int i = 0; i < size; i++) {
 		correspondence[i] = std::pair<int, int>(i, i);
+	}
+}
+
+// only work when src = dst
+inline void FastGlobalReg::LoadPoints(const vector<Vector3f>& src, const vector<Vector3f>& dst)
+{
+	int size = src.size();
+	points.clear();
+	points.resize(2);
+	points[0].resize(size);
+	for (int i = 0; i < size; i++) {
+		points[0][i] = src[i];
+	}
+	points[1].resize(size);
+	for (int i = 0; i < size; i++) {
+		points[1][i] = dst[i];
 	}
 }
 
@@ -354,8 +372,8 @@ inline double FastGlobalReg::OptimizePairwise(bool decrease_mu, int numIter)
 	int dst = 1;	// dst
 
 	// make another copy of points[d];
-	vector<Vector3f> pdst_copy;
 	int npdst = points[dst].size();
+	vector<Vector3f> pdst_copy(npdst);
 	for (int i = 0; i < npdst; i++) {
 		pdst_copy[i] = points[dst][i];
 	}

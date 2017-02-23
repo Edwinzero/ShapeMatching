@@ -9,6 +9,7 @@
 #include "imgui_impl_glut.h"
 #include <camera.h>
 #include <CLutils.h>
+#include <Eigen_op.h>
 #include <ModelLoader.h>
 
 #include <FastGlobalRegistration.h>
@@ -25,7 +26,9 @@ bool show_another_window = false;
 Camera camera;
 std::vector<Vector3f> points0, points1;
 std::vector<Vector3f> normals0, normals1;
+bool doRegistration = false;
 FastGlobalReg fgr;
+Eigen::Matrix4f optMat;
 
 //=========================================================================
 //		OpenGL VBO wrapper
@@ -165,7 +168,6 @@ void DrawScene3D() {
 			glEnableClientState(GL_VERTEX_ARRAY);
 			//glEnableClientState(GL_COLOR_ARRAY);
 			glColor3f(1.0f, 0.0f, 0.0f);
-			glScalef(50.0f, 50.0f, 50.0f);
 			glVertexPointer(3, GL_FLOAT, sizeof(GLfloat) * 3, points0.data());
 			//glColorPointer(3, GL_FLOAT, sizeof(GLfloat) * 3, pc0.normals.data());
 			glDrawArrays(GL_POINTS, 0, points0.size());
@@ -181,8 +183,6 @@ void DrawScene3D() {
 			glEnableClientState(GL_VERTEX_ARRAY);
 			//glEnableClientState(GL_COLOR_ARRAY);
 			glColor3f(0.0f, 1.0f, 0.0f);
-			glScalef(50.0f, 50.0f, 50.0f);
-			//glLoadMatrixf()
 			glVertexPointer(3, GL_FLOAT, sizeof(GLfloat) * 3, points1.data());
 			//glColorPointer(3, GL_FLOAT, sizeof(GLfloat) * 3, pc1.normals.data());
 			glDrawArrays(GL_POINTS, 0, points1.size());
@@ -288,7 +288,6 @@ void Render(void)
 	glutSwapBuffers();
 	glutPostRedisplay();
 }
-
 //=========================================================================
 //		Reshape
 //=========================================================================
@@ -325,6 +324,19 @@ void Reshape(int w, int h)
 }
 
 //=========================================================================
+//		Update
+//=========================================================================
+void Update(void) {
+	if (doRegistration) {
+		fgr.NormalizePoints();
+		fgr.OptimizePairwise(false, 4);
+		optMat = fgr.GetRes();
+		AffineTransfomrPointsFromMat(points0, optMat.inverse());
+		doRegistration = false;
+	}
+}
+
+//=========================================================================
 //		keyboard & mouse callback
 //=========================================================================
 bool keyboardEvent(unsigned char nChar, int nX, int nY)
@@ -353,6 +365,9 @@ bool keyboardEvent(unsigned char nChar, int nX, int nY)
 	}
 	if (nChar == 'D' || nChar == 'd') {
 		show_debug_window = !show_debug_window;
+	}
+	if (nChar == 'r') {
+		doRegistration = !doRegistration;
 	}
 
 	return true;
@@ -478,6 +493,7 @@ void Init_OpenGL(int argc, char **argv, const char* title)
 	// callback
 	glutDisplayFunc(Render);
 	glutReshapeFunc(Reshape);
+	glutIdleFunc(Update);
 	glutKeyboardFunc(keyboardCallback);
 	glutSpecialFunc(KeyboardSpecial);
 	glutMouseFunc(MouseCallback);
@@ -503,9 +519,16 @@ void Init_Imgui(void) {
 void Init_RenderScene(void) {
 	PLYModelLoader pc0, pc1;
 	pc0.LoadModel("Depth_0000.ply");
-	pc1.LoadModel("Depth_0001.ply");
+	pc1.LoadModel("Depth_0000.ply");
 	pc0.CopyToBuffer(points0, normals0);
 	pc1.CopyToBuffer(points1, normals1);
+	ScalePoints(points0, 50.0f);
+	ScalePoints(points1, 50.0f);
+	AffineTransformPointsFromAngle(points0, Eigen::Vector3f(20.0f, -50.0f, 70.0f), Eigen::Vector3f(-50.5f, +50.2f, -50.7f));
+
+	fgr.LoadPoints(points0, points1);
+	fgr.LoadCorrespondence(points0);
+	optMat = Eigen::Matrix4f::Identity();
 }
 
 //=========================================================================
