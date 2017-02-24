@@ -72,11 +72,13 @@ void CreateGLmem(GLmem &m, std::vector<float> vertices, std::vector<float> norma
 	/// position
 	m.m_numVerts = numVertices;
 	glEnableVertexAttribArray(ATTRIBUTE_LAYOUT_INDEX_POSITION);
+	glGenBuffers(1, &m.vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, m.vbo);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*numVertices * 3, vertices.data(), GL_STATIC_DRAW);
 	glVertexAttribPointer(ATTRIBUTE_LAYOUT_INDEX_POSITION, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (GLvoid*)0); // bind vao to vbo
 	/// normal																											 
 	if (numNormals > 0) {
+		glEnableVertexAttribArray(ATTRIBUTE_LAYOUT_INDEX_NORMAL);
 		glGenBuffers(1, &m.nbo);
 		glBindBuffer(GL_ARRAY_BUFFER, m.nbo);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(float)*numNormals * 3, normals.data(), GL_STATIC_DRAW);
@@ -84,6 +86,7 @@ void CreateGLmem(GLmem &m, std::vector<float> vertices, std::vector<float> norma
 	}
 	/// uvs
 	if (numUVs > 0) {
+		glEnableVertexAttribArray(ATTRIBUTE_LAYOUT_INDEX_UV);
 		glGenBuffers(1, &m.ubo);
 		glBindBuffer(GL_ARRAY_BUFFER, m.ubo);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(float)*numUVs * 2, uvs.data(), GL_STATIC_DRAW);
@@ -118,12 +121,14 @@ void CreateGLmem(GLmem &m, std::vector<T> vertices, std::vector<T> normals) {
 	/// position
 	m.m_numVerts = numVertices;
 	glEnableVertexAttribArray(ATTRIBUTE_LAYOUT_INDEX_POSITION);
+	glGenBuffers(1, &m.vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, m.vbo);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*numVertices * 3, vertices.data(), GL_STATIC_DRAW);
 	glVertexAttribPointer(ATTRIBUTE_LAYOUT_INDEX_POSITION, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (GLvoid*)0); // bind vao to vbo
 
 	/// normal																											 
 	if (numNormals > 0) {
+		glEnableVertexAttribArray(ATTRIBUTE_LAYOUT_INDEX_NORMAL);
 		glGenBuffers(1, &m.nbo);
 		glBindBuffer(GL_ARRAY_BUFFER, m.nbo);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(float)*numNormals * 3, normals.data(), GL_STATIC_DRAW);
@@ -131,9 +136,9 @@ void CreateGLmem(GLmem &m, std::vector<T> vertices, std::vector<T> normals) {
 	}
 
 	// Reset State
-	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+
 }
 
 #endif // !_GL_OBJECTS_H

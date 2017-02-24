@@ -33,7 +33,7 @@ void LoadGLShaderFromFile(std::vector<char> &str, const char *path) {
 // Purpose: Compiles a GL shader program and returns the handle. Returns 0 if
 //			the shader couldn't be compiled for some reason.
 //-----------------------------------------------------------------------------
-GLuint CompileGLShader(const char *pchShaderName, const char *pchVertexShader, const char *pchFragmentShader)
+GLuint CompileGLShaderFromSource(const char *pchShaderName, const char *pchVertexShader, const char *pchFragmentShader)
 {
 	GLuint unProgramID = glCreateProgram();
 
@@ -94,7 +94,7 @@ GLuint CompileGLShader(const char *pchShaderName, const char *pchVertexShader, c
 	return unProgramID;
 }
 
-GLuint CompileGLShader(const char *pchShaderName, const char *pchVertexShader, const char *pchGeometryShader, const char *pchFragmentShader)
+GLuint CompileGLShaderFromSource(const char *pchShaderName, const char *pchVertexShader, const char *pchGeometryShader, const char *pchFragmentShader)
 {
 	GLuint unProgramID = glCreateProgram();
 	//  vertex
@@ -175,6 +175,14 @@ GLuint CompileGLShader(const char *pchShaderName, const char *pchVertexShader, c
 	glUseProgram(0);
 
 	return unProgramID;
+}
+
+
+GLuint CompileGLShader(const char *pchShaderName, const char *pchVertexShader, const char *pchFragmentShader) {
+	std::vector<char> vert, frag;
+	LoadGLShaderFromFile(vert, pchVertexShader);
+	LoadGLShaderFromFile(frag, pchFragmentShader);
+	return CompileGLShaderFromSource(pchShaderName, vert.data(), frag.data());
 }
 
 // ======================

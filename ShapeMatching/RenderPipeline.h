@@ -32,6 +32,7 @@ bool doRegistration = false;
 FastGlobalReg fgr;
 Eigen::Matrix4f optMat;
 
+bool reComplieShader = false;
 GLuint GLPointRenderProgram;
 GLmem object0, object1;
 
@@ -142,44 +143,49 @@ void DrawScene3D() {
 		glPushMatrix();
 		if (points0.size()) {
 			glUseProgram(GLPointRenderProgram);
-			glm::mat4 proj = glm::mat4(1.0f);
-			glm::mat4 view = glm::mat4(1.0f);
-			glGetFloatv(GL_PROJECTION_MATRIX, glm::value_ptr(proj));
-			glGetFloatv(GL_MODELVIEW_MATRIX, glm::value_ptr(view));
-			glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "proj"), 1, GL_FALSE, &proj[0][0]);
-			glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "view"), 1, GL_FALSE, &view[0][0]);
+			Eigen::Matrix4f proj = Eigen::Matrix4f::Identity();
+			Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
+			glGetFloatv(GL_PROJECTION_MATRIX, proj.data());
+			glGetFloatv(GL_MODELVIEW_MATRIX, view.data());
+			glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "proj"), 1, GL_FALSE, proj.data());
+			glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "view"), 1, GL_FALSE, view.data());
 			glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "model"), 1, GL_FALSE, optMat.data());
+			glUniform3fv(glGetUniformLocation(GLPointRenderProgram, "color"), 1, Eigen::Vector3f(1.0f, 0.0f, 0.0f).data());
 			glBindVertexArray(object0.vao);
 			glDrawArrays(GL_POINTS, 0, object0.m_numVerts);
 			glBindVertexArray(0);
 
 			glUseProgram(0);
-			/*
-			glEnableClientState(GL_VERTEX_ARRAY);
-			//glEnableClientState(GL_COLOR_ARRAY);
-			glColor3f(1.0f, 0.0f, 0.0f);
-			glVertexPointer(3, GL_FLOAT, sizeof(GLfloat) * 3, points0.data());
-			//glColorPointer(3, GL_FLOAT, sizeof(GLfloat) * 3, pc0.normals.data());
-			glDrawArrays(GL_POINTS, 0, points0.size());
-
-			//glDisableClientState(GL_COLOR_ARRAY);
-			glDisableClientState(GL_VERTEX_ARRAY);
-			//*/
 		}
 		glMatrixMode(GL_MODELVIEW);
 		glPopMatrix();
 		glMatrixMode(GL_MODELVIEW);
 		glPushMatrix();
-		if (!points1.size()) {
-			glEnableClientState(GL_VERTEX_ARRAY);
+		if (points1.size()) {
+			glUseProgram(GLPointRenderProgram);
+			Eigen::Matrix4f proj = Eigen::Matrix4f::Identity();
+			Eigen::Matrix4f view = Eigen::Matrix4f::Identity(); 
+			Eigen::Matrix4f model = Eigen::Matrix4f::Identity();
+			glGetFloatv(GL_PROJECTION_MATRIX, proj.data());
+			glGetFloatv(GL_MODELVIEW_MATRIX, view.data());
+			glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "proj"), 1, GL_FALSE, proj.data());
+			glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "view"), 1, GL_FALSE, view.data());
+			glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "model"), 1, GL_FALSE,model.data());
+			glUniform3fv(glGetUniformLocation(GLPointRenderProgram, "color"), 1, Eigen::Vector3f(0.0f, 1.0f, 0.0f).data());
+			glBindVertexArray(object1.vao);
+			glDrawArrays(GL_POINTS, 0, object1.m_numVerts);
+			glBindVertexArray(0);
+
+			glUseProgram(0);
+			//glEnableClientState(GL_VERTEX_ARRAY);
 			//glEnableClientState(GL_COLOR_ARRAY);
-			glColor3f(0.0f, 1.0f, 0.0f);
-			glVertexPointer(3, GL_FLOAT, sizeof(GLfloat) * 3, points1.data());
+			//glColor3f(0.0f, 1.0f, 0.0f);
+			//glVertexPointer(3, GL_FLOAT, sizeof(GLfloat) * 3, points1.data());
 			//glColorPointer(3, GL_FLOAT, sizeof(GLfloat) * 3, pc1.normals.data());
-			glDrawArrays(GL_POINTS, 0, points1.size());
+			//glDrawArrays(GL_POINTS, 0, points1.size());
 
 			//glDisableClientState(GL_COLOR_ARRAY);
-			glDisableClientState(GL_VERTEX_ARRAY);
+			//glDisableClientState(GL_VERTEX_ARRAY);
 		}
 		glMatrixMode(GL_MODELVIEW);
 		glPopMatrix();
@@ -310,7 +316,6 @@ void Reshape(int w, int h)
 	//glLoadIdentity();
 	//glOrtho(0.f, w, 0.f, h, -1.f, 1.f);
 	//glOrtho(-2.0, 2.0, -2.0, 2.0, -2.0, 2.0);
-	//glOrtho(0.f, w, 0.f, h, -1.f, 1.f);
 	glutPostRedisplay();
 }
 
@@ -321,9 +326,14 @@ void Update(void) {
 	if (doRegistration) {
 		fgr.NormalizePoints();
 		fgr.OptimizePairwise(false, 4);
-		optMat = fgr.GetRes();
-		AffineTransfomrPointsFromMat(points0, optMat.inverse());
+		optMat = fgr.GetRes().inverse();
+		//AffineTransfomrPointsFromMat(points0, optMat.inverse());
 		doRegistration = false;
+	}
+
+	if (reComplieShader) {
+		GLPointRenderProgram = CompileGLShader("PointRender", "Shaders/PointRender.vs", "Shaders/PointRender.fs");
+		reComplieShader = false;
 	}
 }
 
@@ -359,6 +369,9 @@ bool keyboardEvent(unsigned char nChar, int nX, int nY)
 	}
 	if (nChar == 'r') {
 		doRegistration = !doRegistration;
+	}
+	if (nChar == 'c') {
+		reComplieShader = !reComplieShader;
 	}
 
 	return true;
@@ -455,10 +468,7 @@ void MouseMoveCallback(int x, int y)
 //		Initialize platforms
 //=========================================================================
 void Init_GLshader(void) {
-	std::vector<char> vert, frag;
-	LoadGLShaderFromFile(vert, "Shaders/PointRender.vs");
-	LoadGLShaderFromFile(frag, "Shaders/PointRender.fs");
-	GLPointRenderProgram = CompileGLShader("PointRender", vert.data(), frag.data());
+	GLPointRenderProgram = CompileGLShader("PointRender", "Shaders/PointRender.vs", "Shaders/PointRender.fs");
 }
 // initialize ogl and imgui
 void Init_OpenGL(int argc, char **argv, const char* title)

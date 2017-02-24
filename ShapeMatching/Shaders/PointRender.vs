@@ -6,11 +6,11 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 proj;
 
-out vec3 normals;
+out vec3 out_normal;
 
 void main(){
-    mat4 vm = view * model;
-    mat4 mvp = proj * vm;
-    normals = (vm * vec4(normal, 1.0)).xyz;
-    gl_Position = mvp * vec4(pos, 1.0);
+    out_normal = (transpose(inverse(model)) * vec4(normal, 1.0)).xyz;
+    vec4 model_pos = model * vec4(pos, 1.0);
+    vec4 view_pos = view * model_pos; 
+    gl_Position = proj * view_pos;
 } 

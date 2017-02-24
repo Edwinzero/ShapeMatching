@@ -26,7 +26,7 @@ public:
 
 	void LoadModel(const char* filepath) {
 		ifstream file;
-		file.open(filepath, ios::in | ios::binary);
+		file.open(filepath, ios::binary);
 		if (!file.is_open()) {
 			cerr << "Couldn't open ply file < " << filepath << "> ! \n";
 			return;
@@ -65,7 +65,9 @@ public:
 		normals.reserve(totalVert * 3);
 		// Read p, n
 		if (!hasColor && hasNormal) {
+			float v = 0.0f;
 			for (int i = 0; i < totalVert; i++) {
+				//*
 				getline(file, line);
 				std::stringstream ss(line);
 				float v;
@@ -81,7 +83,8 @@ public:
 				ss >> v;				normals.push_back(v);
 				//cout << v << " ";
 				ss >> v;				normals.push_back(v);
-				//cout << v << " " << "\n";			
+				//cout << v << " " << "\n";		
+				//*/
 			}
 		}
 		// TODO
