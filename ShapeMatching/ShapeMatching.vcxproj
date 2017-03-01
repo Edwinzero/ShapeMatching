@@ -137,6 +137,7 @@
     <ClInclude Include="IMGUI\stb_rect_pack.h" />
     <ClInclude Include="IMGUI\stb_textedit.h" />
     <ClInclude Include="IMGUI\stb_truetype.h" />
+    <ClInclude Include="KDtree.h" />
     <ClInclude Include="ModelLoader.h" />
     <ClInclude Include="RenderPipeline.h" />
     <ClInclude Include="RenderUtils.h" />

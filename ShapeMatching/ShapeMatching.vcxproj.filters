@@ -34,6 +34,9 @@
     <Filter Include="Kernels">
       <UniqueIdentifier>{4a5ff293-92dc-47b0-b56d-d79b5bb48961}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\SpatialDataStructure">
+      <UniqueIdentifier>{25108abe-c45f-4d54-8166-ca710cdb343b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -100,6 +103,9 @@
     </ClInclude>
     <ClInclude Include="RenderUtils.h">
       <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="KDtree.h">
+      <Filter>Header Files\SpatialDataStructure</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

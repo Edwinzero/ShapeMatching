@@ -7,6 +7,7 @@
 #include <Eigen/Geometry>
 #include <Eigen\Dense>
 #include <Eigen\Cholesky>
+#include <FPFH.h>
 
 using namespace std;
 using namespace Eigen;
@@ -38,7 +39,7 @@ public:
 	void LoadPoints(const vector<Vector3f> &src, const vector<Vector3f> &dst);
 	void AdvancedMatching();
 	void NormalizePoints();
-	double OptimizePairwise(bool decrease_mu, int numIter);
+	double OptimizePairwise(bool decrease_mu, int numIter, int src, int dst);
 	Matrix4f GetRes();
 
 	// some internal functions
@@ -360,16 +361,13 @@ inline void FastGlobalReg::NormalizePoints()
 	}
 }
 
-inline double FastGlobalReg::OptimizePairwise(bool decrease_mu, int numIter)
+inline double FastGlobalReg::OptimizePairwise(bool decrease_mu, int numIter, int src, int dst)
 {
 	printf("[FGR] Pairwise rigid pose optimization\n");
 	double miu;
 	int nIter = numIter;
 	resTransform = Eigen::Matrix4f::Identity();
 	miu = startScale;
-
-	int src = 0;  // src
-	int dst = 1;	// dst
 
 	// make another copy of points[d];
 	int npdst = points[dst].size();
