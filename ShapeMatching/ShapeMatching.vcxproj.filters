@@ -107,6 +107,9 @@
     <ClInclude Include="KDtree.h">
       <Filter>Header Files\SpatialDataStructure</Filter>
     </ClInclude>
+    <ClInclude Include="AABB.h">
+      <Filter>Header Files\SpatialDataStructure</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="IMGUI\imgui.ini">
