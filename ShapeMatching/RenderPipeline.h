@@ -325,7 +325,7 @@ void Reshape(int w, int h)
 void Update(void) {
 	if (doRegistration) {
 		fgr.NormalizePoints();
-		fgr.OptimizePairwise(false, 4, 0, 1);
+		fgr.OptimizePairwise(false, 2, 0, 1);
 		optMat = fgr.GetRes().inverse();
 		//AffineTransfomrPointsFromMat(points0, optMat.inverse());
 		doRegistration = false;

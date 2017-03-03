@@ -37,6 +37,9 @@
     <Filter Include="Header Files\SpatialDataStructure">
       <UniqueIdentifier>{25108abe-c45f-4d54-8166-ca710cdb343b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Noise">
+      <UniqueIdentifier>{37d68075-42c7-4c3d-8dfc-4360871dcd00}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -109,6 +112,9 @@
     </ClInclude>
     <ClInclude Include="AABB.h">
       <Filter>Header Files\SpatialDataStructure</Filter>
+    </ClInclude>
+    <ClInclude Include="GaussianNoise.h">
+      <Filter>Header Files\Noise</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
