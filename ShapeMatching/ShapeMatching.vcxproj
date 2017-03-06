@@ -141,6 +141,7 @@
     <ClInclude Include="IMGUI\stb_truetype.h" />
     <ClInclude Include="KDtree.h" />
     <ClInclude Include="ModelLoader.h" />
+    <ClInclude Include="Point.h" />
     <ClInclude Include="RenderPipeline.h" />
     <ClInclude Include="RenderUtils.h" />
   </ItemGroup>

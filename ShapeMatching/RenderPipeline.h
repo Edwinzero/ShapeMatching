@@ -139,6 +139,7 @@ void DrawScene3D() {
 		glPopMatrix();
 
 		// Point cloud data
+		glEnable(GL_PROGRAM_POINT_SIZE);
 		glMatrixMode(GL_MODELVIEW);
 		glPushMatrix();
 		if (points0.size()) {
@@ -189,6 +190,7 @@ void DrawScene3D() {
 		}
 		glMatrixMode(GL_MODELVIEW);
 		glPopMatrix();
+		glDisable(GL_PROGRAM_POINT_SIZE);
 
 		glMatrixMode(GL_PROJECTION);
 		glPopMatrix();
