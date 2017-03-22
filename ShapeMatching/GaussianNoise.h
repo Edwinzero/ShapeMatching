@@ -8,6 +8,7 @@ public:
 	int size;
 public:
 	Gaussian(){}
+	
 
 	
 };

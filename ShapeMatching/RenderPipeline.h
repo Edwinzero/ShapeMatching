@@ -10,6 +10,8 @@
 #include <camera.h>
 #include <GLobjects.h>
 #include <RenderUtils.h>
+#include <2Dcontent.h>
+
 #include <CLutils.h>
 #include <Eigen_op.h>
 #include <ModelLoader.h>
@@ -17,8 +19,8 @@
 #include <FastGlobalRegistration.h>
 
 using namespace std;
-unsigned int screenWidth = 800;
-unsigned int screenHeight = 800;
+unsigned int screenWidth = 1280;
+unsigned int screenHeight = 780;
 unsigned int pre_screenWidth = 0;
 unsigned int pre_screenHeight = 0;
 bool show_debug_window = true;
@@ -35,6 +37,8 @@ Eigen::Matrix4f optMat;
 bool reComplieShader = false;
 GLuint GLPointRenderProgram;
 GLmem object0, object1;
+
+GLuint texImg = -1;
 
 //================================
 // default draw event
@@ -78,11 +82,13 @@ void DrawScene2D() {
 	{
 		//glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_TRANSFORM_BIT);
 		glDisable(GL_DEPTH_TEST);
-		glEnableClientState(GL_VERTEX_ARRAY);
-		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-		glEnableClientState(GL_COLOR_ARRAY);
+	//	glEnableClientState(GL_VERTEX_ARRAY);
+	//	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	//	glEnableClientState(GL_COLOR_ARRAY);
 		// Setup viewport, orthographic projection matrix
-		glViewport(0, 0, (GLsizei)screenWidth, (GLsizei)screenHeight);
+		int offsetx = screenWidth * 0.5;
+		int offsety = screenHeight * 0.5;
+		glViewport(offsetx, offsety, (GLsizei)screenWidth/2, (GLsizei)screenHeight/2);
 		glMatrixMode(GL_PROJECTION);
 		glPushMatrix();
 		glLoadIdentity();
@@ -92,16 +98,18 @@ void DrawScene2D() {
 		glLoadIdentity();
 
 		// Draw a triangle at 0.5 z
-		glBegin(GL_TRIANGLES);
-		glColor3f(1.0f, 0.0f, 0.0f);
-		glVertex3f(50.5, 50.5, 0.5);
-		glVertex3f(550.5, 50.5, 0.5);
-		glVertex3f(550.0, 150.5, 0.5);
-		glEnd();
+		//glBegin(GL_TRIANGLES);
+		//glColor3f(1.0f, 0.0f, 0.0f);
+		//glVertex3f(50.5, 50.5, 0.5);
+		//glVertex3f(550.5, 50.5, 0.5);
+		//glVertex3f(550.0, 150.5, 0.5);
+		//glEnd();
 
-		glDisableClientState(GL_COLOR_ARRAY);
-		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-		glDisableClientState(GL_VERTEX_ARRAY);
+		Draw2DContent(texImg);
+
+	//	glDisableClientState(GL_COLOR_ARRAY);
+	//	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	//	glDisableClientState(GL_VERTEX_ARRAY);
 		glMatrixMode(GL_PROJECTION);
 		glPopMatrix();
 		glMatrixMode(GL_MODELVIEW);
@@ -549,6 +557,7 @@ void Init_Imgui(void) {
 	//glClearColor(0.447f, 0.565f, 0.604f, 1.0f);
 	//glClear(GL_COLOR_BUFFER_BIT);
 	ImGui_ImplGLUT_Init();
+	InitImage(texImg);
 }
 
 //=========================================================================
