@@ -26,8 +26,11 @@ unsigned int pre_screenHeight = 0;
 bool show_debug_window = true;
 bool show_test_window = false;
 bool show_another_window = false;
+bool show_color_img_window = true;
+bool show_depth_img_window = true;
 
 Camera camera;
+// Registration
 std::vector<Vector3f> points0, points1;
 std::vector<Vector3f> normals0, normals1;
 bool doRegistration = false;
@@ -38,7 +41,10 @@ bool reComplieShader = false;
 GLuint GLPointRenderProgram;
 GLmem object0, object1;
 
-GLuint texImg = -1;
+// Feature detection
+ImageTex colorTex;
+ImageTex depthTex;
+GLfbo imageCanvas;
 
 //================================
 // default draw event
@@ -104,8 +110,6 @@ void DrawScene2D() {
 		//glVertex3f(550.5, 50.5, 0.5);
 		//glVertex3f(550.0, 150.5, 0.5);
 		//glEnd();
-
-		Draw2DContent(texImg);
 
 	//	glDisableClientState(GL_COLOR_ARRAY);
 	//	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -215,12 +219,14 @@ void drawGUI()
 	if(show_debug_window)
 	{	
 		ImGui::SetWindowSize(ImVec2(200, 150), ImGuiSetCond_FirstUseEver);
-		ImGui::SetWindowPos(ImVec2(0, screenHeight-150));
+		ImGui::SetWindowPos(ImVec2(0, screenHeight-250));
 		static float f = 0.0f;
 		ImGui::Text("Debug information");
 		ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
 		if (ImGui::Button("Test Window")) show_test_window ^= 1;
 		if (ImGui::Button("Another Window")) show_another_window ^= 1;
+		if (ImGui::Button("Color Image Window")) show_color_img_window ^= 1;
+		if (ImGui::Button("Depth Image Window")) show_depth_img_window ^= 1;
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	}
 
@@ -245,6 +251,21 @@ void drawGUI()
 	{
 		ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiSetCond_FirstUseEver);
 		ImGui::ShowTestWindow(&show_test_window);
+	}
+
+	if (show_color_img_window) {
+		ImGui::SetNextWindowSize(ImVec2(colorTex.width, colorTex.height), ImGuiSetCond_FirstUseEver);
+		ImGui::SetNextWindowPos(ImVec2(150, 20), ImGuiSetCond_FirstUseEver);
+		ImGui::Begin("Color Image Window", &show_color_img_window, ImGuiWindowFlags_AlwaysAutoResize);
+		ImGui::Image((void*)colorTex.texID, ImVec2(colorTex.width, colorTex.height));
+		ImGui::End();
+	}
+	if (show_depth_img_window) {
+		ImGui::SetNextWindowSize(ImVec2(depthTex.width, depthTex.height), ImGuiSetCond_FirstUseEver);
+		ImGui::SetNextWindowPos(ImVec2(150, 20), ImGuiSetCond_FirstUseEver);
+		ImGui::Begin("Depth Image Window", &show_depth_img_window, ImGuiWindowFlags_AlwaysAutoResize);
+		ImGui::Image((void*)depthTex.texID, ImVec2(depthTex.width, depthTex.height));
+		ImGui::End();
 	}
 
 	ImGui::Render();
@@ -557,7 +578,8 @@ void Init_Imgui(void) {
 	//glClearColor(0.447f, 0.565f, 0.604f, 1.0f);
 	//glClear(GL_COLOR_BUFFER_BIT);
 	ImGui_ImplGLUT_Init();
-	InitImage(texImg);
+	InitColorImage(colorTex, "rgb_color.jpeg");
+	InitDepthImage(depthTex, "BGdepth.png");
 }
 
 //=========================================================================

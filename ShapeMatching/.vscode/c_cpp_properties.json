@@ -1,0 +1,45 @@
+{
+    "configurations": [
+        {
+            "name": "Mac",
+            "includePath": [
+                "/usr/include",
+                "/usr/local/include"
+            ],
+            "browse": {
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": ""
+            }
+        },
+        {
+            "name": "Linux",
+            "includePath": [
+                "/usr/include",
+                "/usr/local/include"
+            ],
+            "browse": {
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": ""
+            }
+        },
+        {
+            "name": "Win32",
+            "includePath": [
+                "C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include/*",
+                "C:/GLWrappers/flann/include/*",
+                "C:/GLWrappers/eigen-5.2.6/*",
+                "C:/GLWrappers/opencv/build/include/*",
+                "C:/Users/Shang/Source/Repos/ShapeMatching/Depends/OpenGL/*",
+                "E:/GLWrappers/flann/include/*",
+                "E:/GLWrappers/eigen-5.2.6/*",
+                "E:/GLWrappers/opencv/build/include/*",
+                "E:/Users/Shang/Source/Repos/ShapeMatching/Depends/OpenGL/*"
+
+            ],
+            "browse": {
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": ""
+            }
+        }
+    ]
+}

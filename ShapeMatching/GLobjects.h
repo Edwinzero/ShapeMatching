@@ -7,13 +7,15 @@
 #include <GL\freeglut.h>
 #include <Eigen\Core>
 
-typedef struct FBO {
+typedef struct GLfbo {
 	GLuint fbo_;
 	GLuint tex_;
 	GLuint dep_;
+
+	GLfbo():fbo_(-1), tex_(-1), dep_(-1){}
 } FBO;
 
-void CreateFBO(FBO &o, int width, int height) {
+bool CreateFBO(GLfbo &o, int width, int height) {
 	glGenFramebuffers(0, &o.fbo_);
 	glBindFramebuffer(GL_FRAMEBUFFER, o.fbo_);
 
@@ -24,14 +26,30 @@ void CreateFBO(FBO &o, int width, int height) {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	//glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, o.tex_, 0);
 
+	glGenRenderbuffers(1, &o.dep_);	// bind depth buffer
+	glBindRenderbuffer(GL_RENDERBUFFER, o.dep_);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, o.dep_);
+
+	// check FBO status
+	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if (status != GL_FRAMEBUFFER_COMPLETE)
+	{
+		return false;
+	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	return true;
 }
 
+void CleanFBO(GLfbo &obj) {
+	glDeleteRenderbuffers(1, &obj.dep_);
+	glDeleteTextures(1, &obj.tex_);
+	glDeleteFramebuffers(1, &obj.fbo_);
+}
 
 
 #define ATTRIBUTE_LAYOUT_INDEX_POSITION 0
