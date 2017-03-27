@@ -16,6 +16,9 @@
 #include <Eigen_op.h>
 #include <ModelLoader.h>
 
+// Feature
+#include <SIFTmatching.h>
+// Registration
 #include <FastGlobalRegistration.h>
 
 using namespace std;
@@ -45,6 +48,8 @@ GLmem object0, object1;
 ImageTex colorTex;
 ImageTex depthTex;
 GLfbo imageCanvas;
+GLmem canvas;
+GLuint GLGradientProgram;
 
 //================================
 // default draw event
@@ -119,6 +124,9 @@ void DrawScene2D() {
 		glMatrixMode(GL_MODELVIEW);
 		glPopMatrix();
 		//glPopAttrib();
+
+
+		
 	}
 }
 
@@ -500,6 +508,7 @@ void MouseMoveCallback(int x, int y)
 //=========================================================================
 void Init_GLshader(void) {
 	GLPointRenderProgram = CompileGLShader("PointRender", "Shaders/PointRender.vs", "Shaders/PointRender.fs");
+	GLGradientProgram = CompileGLShader("ImageGradient", "Shaders/2Dcanvas.vs", "Shaders/2Dcanvas.fs");
 }
 // initialize ogl and imgui
 void Init_OpenGL(int argc, char **argv, const char* title)
@@ -569,6 +578,13 @@ void Init_RenderScene(void) {
 	optMat = Eigen::Matrix4f::Identity();
 }
 
+void Init_2DContents() {
+	// for gui display, use cv process then bind gui to display
+	InitColorImage(colorTex, "rgb_color.jpeg");
+	InitDepthImage(depthTex, "BGdepth.png");
+	//CreateFBO(imageCanvas, colorTex.width, colorTex.height);
+}
+
 void Init_OpenCL(void) {
 
 
@@ -578,8 +594,6 @@ void Init_Imgui(void) {
 	//glClearColor(0.447f, 0.565f, 0.604f, 1.0f);
 	//glClear(GL_COLOR_BUFFER_BIT);
 	ImGui_ImplGLUT_Init();
-	InitColorImage(colorTex, "rgb_color.jpeg");
-	InitDepthImage(depthTex, "BGdepth.png");
 }
 
 //=========================================================================
@@ -588,8 +602,8 @@ void Init_Imgui(void) {
 void Run_Render(int argc, char **argv, const char* title){ 
 	Init_OpenGL(argc, argv, title);
 	Init_RenderScene();
+	Init_2DContents();
 	Init_OpenCL();
-	Init_GLshader();
 	Init_Imgui();
 
 	glutMainLoop();

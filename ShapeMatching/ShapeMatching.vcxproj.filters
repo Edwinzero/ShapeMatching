@@ -125,6 +125,12 @@
     <ClInclude Include="2Dcontent.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="OpticalFlow.h">
+      <Filter>Header Files\Feature</Filter>
+    </ClInclude>
+    <ClInclude Include="SIFTmatching.h">
+      <Filter>Header Files\Feature</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="IMGUI\imgui.ini">

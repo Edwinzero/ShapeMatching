@@ -159,4 +159,26 @@ void CreateGLmem(GLmem &m, std::vector<T> vertices, std::vector<T> normals) {
 
 }
 
+void CreateCanvas(GLmem &m) {
+	GLfloat quadVertices[] = {   // Vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
+								 // Positions   // TexCoords
+		-1.0f,  1.0f,  0.0f, 1.0f,
+		-1.0f, -1.0f,  0.0f, 0.0f,
+		1.0f, -1.0f,  1.0f, 0.0f,
+
+		-1.0f,  1.0f,  0.0f, 1.0f,
+		1.0f, -1.0f,  1.0f, 0.0f,
+		1.0f,  1.0f,  1.0f, 1.0f
+	};
+	glGenVertexArrays(1, &m.vao);
+	glBindVertexArray(m.vao);
+	glGenBuffers(1, &m.vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, m.vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 5, (GLvoid*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 5, (GLvoid*)(sizeof(float)*3));
+	glBindVertexArray(0);
+}
 #endif // !_GL_OBJECTS_H
