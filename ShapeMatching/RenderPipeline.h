@@ -383,7 +383,7 @@ void Update(void) {
 	// rgbd mapping
 	Sensor *sensor = &sensors[1];
 	cv::Mat reg;
-	RGBD::DepthToRGBMapping(sensor, ,,reg)
+	//RGBD::DepthToRGBMapping(sensor, ,,reg)
 }
 
 //=========================================================================
@@ -609,13 +609,13 @@ void Init_Sensors(void) {
 	// Load images
 	{
 		char filepath[64];
-		sprintf(filepath, "CapturedData/newSegData930/K1/Pose_%d.jpeg", frameID);
-		testRGB = cv::imread(filepath);
-		cv::flip(testRGB, testRGB, 1);
+		//sprintf(filepath, "CapturedData/newSegData930/K1/Pose_%d.jpeg", frameID);
+		//testRGB = cv::imread(filepath);
+		//cv::flip(testRGB, testRGB, 1);
 
-		sprintf(filepath, "CapturedData/newSegData930/K1/Pose_%d.png", frameID);
-		LoadFrame(testIR, filepath);
-		ImgShow("depth", testIR, 512, 424);
+		//sprintf(filepath, "CapturedData/newSegData930/K1/Pose_%d.png", frameID);
+		//LoadFrame(testIR, filepath);
+		//ImgShow("depth", testIR, 512, 424);
 	}
 }
 
