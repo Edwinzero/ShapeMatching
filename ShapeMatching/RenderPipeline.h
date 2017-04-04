@@ -15,6 +15,7 @@
 #include <CLutils.h>
 #include <Eigen_op.h>
 #include <ModelLoader.h>
+#include <RGBDmapping.h>
 
 // Feature
 #include <SIFTmatching.h>
@@ -33,6 +34,9 @@ bool show_color_img_window = true;
 bool show_depth_img_window = true;
 
 Camera camera;
+// Sensor + Data
+std::vector<Sensor> sensors;
+
 // Registration
 std::vector<Vector3f> points0, points1;
 std::vector<Vector3f> normals0, normals1;
@@ -374,6 +378,12 @@ void Update(void) {
 		GLPointRenderProgram = CompileGLShader("PointRender", "Shaders/PointRender.vs", "Shaders/PointRender.fs");
 		reComplieShader = false;
 	}
+
+
+	// rgbd mapping
+	Sensor *sensor = &sensors[1];
+	cv::Mat reg;
+	RGBD::DepthToRGBMapping(sensor, ,,reg)
 }
 
 //=========================================================================
@@ -578,6 +588,38 @@ void Init_RenderScene(void) {
 	optMat = Eigen::Matrix4f::Identity();
 }
 
+void Init_Sensors(void) {
+	// Sensor initialization
+	{
+		const int num_sensor = 2;
+		// init sensors
+		sensors.resize(num_sensor);
+		// load RGB DEP in ex params
+		char depPath[64], rgbPath[64];
+		for (int i = 0; i < num_sensor; i++) {
+			sprintf(depPath, "CamParams/KINECT%d_ir_cali.txt", i);
+			sprintf(rgbPath, "CamParams/KINECT%d_rgb_cali.txt", i);
+			sensors[i].LoadSensorParameters(depPath, rgbPath);
+		}
+		// load dep to global params
+		LoadGlobalIRMatrix(sensors, "CapturedData/newSegData930/sensor-ir.mat");
+		LoadGlobalRGBMatrix(sensors, "../CapturedData/newSegData930/sensor-rgb.mat");
+	}
+
+	// Load images
+	{
+		char filepath[64];
+		sprintf(filepath, "CapturedData/newSegData930/K1/Pose_%d.jpeg", frameID);
+		testRGB = cv::imread(filepath);
+		cv::flip(testRGB, testRGB, 1);
+
+		sprintf(filepath, "CapturedData/newSegData930/K1/Pose_%d.png", frameID);
+		LoadFrame(testIR, filepath);
+		ImgShow("depth", testIR, 512, 424);
+	}
+}
+
+
 void Init_2DContents() {
 	// for gui display, use cv process then bind gui to display
 	InitColorImage(colorTex, "rgb_color.jpeg");
@@ -596,12 +638,14 @@ void Init_Imgui(void) {
 	ImGui_ImplGLUT_Init();
 }
 
+
 //=========================================================================
 //		Run Mainloop
 //=========================================================================
 void Run_Render(int argc, char **argv, const char* title){ 
 	Init_OpenGL(argc, argv, title);
 	Init_RenderScene();
+	Init_Sensors();
 	Init_2DContents();
 	Init_OpenCL();
 	Init_Imgui();
