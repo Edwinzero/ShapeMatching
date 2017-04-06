@@ -57,6 +57,9 @@
     <ClCompile Include="IMGUI\imgui.cpp">
       <Filter>Resource Files\IMGUI</Filter>
     </ClCompile>
+    <ClCompile Include="plyloader.cpp">
+      <Filter>Header Files\Utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="camera.h">
@@ -135,6 +138,9 @@
       <Filter>Header Files\Utils</Filter>
     </ClInclude>
     <ClInclude Include="RGBDmapping.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="plyloader.h">
       <Filter>Header Files\Utils</Filter>
     </ClInclude>
   </ItemGroup>

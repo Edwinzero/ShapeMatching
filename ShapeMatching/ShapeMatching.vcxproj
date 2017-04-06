@@ -122,6 +122,7 @@
     <ClCompile Include="IMGUI\imgui_draw.cpp" />
     <ClCompile Include="IMGUI\imgui_impl_glut.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="plyloader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="2Dcontent.h" />
@@ -144,6 +145,7 @@
     <ClInclude Include="KDtree.h" />
     <ClInclude Include="ModelLoader.h" />
     <ClInclude Include="OpticalFlow.h" />
+    <ClInclude Include="plyloader.h" />
     <ClInclude Include="Point.h" />
     <ClInclude Include="RenderPipeline.h" />
     <ClInclude Include="RenderUtils.h" />

@@ -3,7 +3,7 @@
 
 int main(int argc, char **argv) {
 	//Sample_KDtree();
-	Sample_ExtractSIFT();
+	//Sample_ExtractSIFT();
 	Run_Render(argc, argv, "Test");
 	return 0;
 }

@@ -17,6 +17,7 @@ class PLYModelLoader {
 public:
 	std::vector<float> points;
 	std::vector<float> normals;
+	std::vector<int> colors;
 	std::vector<int> indices;
 	int totalVert;
 	int totalFace;
@@ -84,6 +85,39 @@ public:
 				//cout << v << " ";
 				ss >> v;				normals.push_back(v);
 				//cout << v << " " << "\n";		
+				//*/
+			}
+		}
+		if (hasColor && hasNormal) {
+			float v = 0.0f;
+			for (int i = 0; i < totalVert; i++) {
+				//*
+				getline(file, line);
+				std::stringstream ss(line);
+				float v;
+				ss >> v;				points.push_back(v);
+				cout << v << " ";
+				ss >> v;				points.push_back(v);
+				cout << v << " ";
+				ss >> v;				points.push_back(v);
+				cout << v << " ";
+
+				ss >> v;				normals.push_back(v);
+				cout << v << " ";
+				ss >> v;				normals.push_back(v);
+				cout << v << " ";
+				ss >> v;				normals.push_back(v);
+				cout << v << " " << "\n";		
+				//*/
+				// rgba
+				ss >> v;				colors.push_back(v);
+				cout << v << " ";
+				ss >> v;				colors.push_back(v);
+				cout << v << " ";
+				ss >> v;				colors.push_back(v);
+				cout << v << " ";
+				ss >> v;				colors.push_back(v);
+				cout << v << " " << "\n";		
 				//*/
 			}
 		}

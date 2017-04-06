@@ -159,6 +159,50 @@ void CreateGLmem(GLmem &m, std::vector<T> vertices, std::vector<T> normals) {
 
 }
 
+template <class T>
+void CreateGLmem(GLmem &m, std::vector<T> vertices, std::vector<T> normals, std::vector<T> colors) {
+	size_t numVertices = vertices.size();
+	size_t numNormals = normals.size();
+	size_t numColors = colors.size();
+	if (sizeof(T) == 4) {
+		numVertices /= 3;
+		numNormals /= 3;
+		numColors /= 4;
+	}
+
+	glGenVertexArrays(1, &m.vao);
+	glBindVertexArray(m.vao);
+	/// position
+	m.m_numVerts = numVertices;
+	glEnableVertexAttribArray(ATTRIBUTE_LAYOUT_INDEX_POSITION);
+	glGenBuffers(1, &m.vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, m.vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)*numVertices * 3, vertices.data(), GL_STATIC_DRAW);
+	glVertexAttribPointer(ATTRIBUTE_LAYOUT_INDEX_POSITION, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (GLvoid*)0); // bind vao to vbo
+
+																												  /// normal																											 
+	if (numNormals > 0) {
+		glEnableVertexAttribArray(ATTRIBUTE_LAYOUT_INDEX_NORMAL);
+		glGenBuffers(1, &m.nbo);
+		glBindBuffer(GL_ARRAY_BUFFER, m.nbo);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(float)*numNormals * 3, normals.data(), GL_STATIC_DRAW);
+		glVertexAttribPointer(ATTRIBUTE_LAYOUT_INDEX_NORMAL, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (GLvoid*)0); // bind vao to vbo
+	}
+
+	if (numColors > 0) {
+		glEnableVertexAttribArray(2);
+		glGenBuffers(1, &m.ubo);
+		glBindBuffer(GL_ARRAY_BUFFER, m.ubo);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(int)*numColors * 3, colors.data(), GL_STATIC_DRAW);
+		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(int), (GLvoid*)0); // bind vao to vbo
+	}
+
+	// Reset State
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+
+}
+
 void CreateCanvas(GLmem &m) {
 	GLfloat quadVertices[] = {   // Vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
 								 // Positions   // TexCoords

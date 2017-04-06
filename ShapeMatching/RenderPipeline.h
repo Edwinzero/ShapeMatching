@@ -15,6 +15,7 @@
 #include <CLutils.h>
 #include <Eigen_op.h>
 #include <ModelLoader.h>
+#include <plyloader.h>
 #include <RGBDmapping.h>
 
 // Feature
@@ -25,7 +26,7 @@
 using namespace std;
 unsigned int screenWidth = 1280;
 unsigned int screenHeight = 780;
-unsigned int pre_screenWidth = 0;
+unsigned int pre_screenWidth = 0; 
 unsigned int pre_screenHeight = 0;
 bool show_debug_window = true;
 bool show_test_window = false;
@@ -46,7 +47,12 @@ Eigen::Matrix4f optMat;
 
 bool reComplieShader = false;
 GLuint GLPointRenderProgram;
+GLuint GLMocaPointRenderProgram;
 GLmem object0, object1;
+
+
+// Rendering
+GLmem moca_model;
 
 // Feature detection
 ImageTex colorTex;
@@ -214,6 +220,28 @@ void DrawScene3D() {
 		}
 		glMatrixMode(GL_MODELVIEW);
 		glPopMatrix();
+		glMatrixMode(GL_MODELVIEW);
+		glPushMatrix();
+		if (moca_model.vao) {
+			glUseProgram(GLMocaPointRenderProgram);
+			Eigen::Matrix4f proj = Eigen::Matrix4f::Identity();
+			Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
+			Eigen::Matrix4f model = Eigen::Matrix4f::Identity();
+			model *= 1000.0f;
+			glGetFloatv(GL_PROJECTION_MATRIX, proj.data());
+			glGetFloatv(GL_MODELVIEW_MATRIX, view.data());
+			glUniformMatrix4fv(glGetUniformLocation(GLMocaPointRenderProgram, "proj"), 1, GL_FALSE, proj.data());
+			glUniformMatrix4fv(glGetUniformLocation(GLMocaPointRenderProgram, "view"), 1, GL_FALSE, view.data());
+			glUniformMatrix4fv(glGetUniformLocation(GLMocaPointRenderProgram, "model"), 1, GL_FALSE, model.data());
+			glUniform3fv(glGetUniformLocation(GLMocaPointRenderProgram, "color"), 1, Eigen::Vector3f(0.0f, 1.0f, 0.0f).data());
+			glBindVertexArray(moca_model.vao);
+			glDrawArrays(GL_POINTS, 0, moca_model.m_numVerts);
+			glBindVertexArray(0);
+
+			glUseProgram(0);
+		}
+		glMatrixMode(GL_MODELVIEW);
+		glPopMatrix();
 		glDisable(GL_PROGRAM_POINT_SIZE);
 
 		glMatrixMode(GL_PROJECTION);
@@ -376,6 +404,7 @@ void Update(void) {
 
 	if (reComplieShader) {
 		GLPointRenderProgram = CompileGLShader("PointRender", "Shaders/PointRender.vs", "Shaders/PointRender.fs");
+		GLMocaPointRenderProgram = CompileGLShader("MOCA_PointRender", "Shaders/PointCloudRender.vs", "Shaders/PointCloudRender.fs");
 		reComplieShader = false;
 	}
 
@@ -471,13 +500,13 @@ void MouseWheel(int button, int dir, int x, int y)
 	{
 		// Zoom in
 		io.MouseWheel = 1.0;
-		camera.Zoom(dir * 5.0f);
+		camera.Zoom(dir * 2.0f);
 	}
 	else if (dir < 0)
 	{
 		// Zoom out
 		io.MouseWheel = -1.0;
-		camera.Zoom(dir * 5.0f);
+		camera.Zoom(dir * 2.0f);
 	}
 }
 
@@ -519,6 +548,7 @@ void MouseMoveCallback(int x, int y)
 void Init_GLshader(void) {
 	GLPointRenderProgram = CompileGLShader("PointRender", "Shaders/PointRender.vs", "Shaders/PointRender.fs");
 	GLGradientProgram = CompileGLShader("ImageGradient", "Shaders/2Dcanvas.vs", "Shaders/2Dcanvas.fs");
+	GLMocaPointRenderProgram = CompileGLShader("MOCA_PointRender", "Shaders/PointCloudRender.vs", "Shaders/PointCloudRender.fs");
 }
 // initialize ogl and imgui
 void Init_OpenGL(int argc, char **argv, const char* title)
@@ -586,6 +616,11 @@ void Init_RenderScene(void) {
 	fgr.LoadPoints(points0, points1);
 	fgr.LoadCorrespondence(points0);
 	optMat = Eigen::Matrix4f::Identity();
+
+
+	PLYModel m_model("Data/textured_model.ply", 1, 1);
+	CreateGLmem(moca_model, m_model.positions, m_model.normals, m_model.colors);
+
 }
 
 void Init_Sensors(void) {
