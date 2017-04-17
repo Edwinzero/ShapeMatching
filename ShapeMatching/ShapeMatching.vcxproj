@@ -146,10 +146,11 @@
     <ClInclude Include="ModelLoader.h" />
     <ClInclude Include="OpticalFlow.h" />
     <ClInclude Include="plyloader.h" />
-    <ClInclude Include="Point.h" />
+    <ClInclude Include="PointCloud.h" />
     <ClInclude Include="RenderPipeline.h" />
     <ClInclude Include="RenderUtils.h" />
     <ClInclude Include="RGBDmapping.h" />
+    <ClInclude Include="RGBDmappingCPU.h" />
     <ClInclude Include="Sensor.h" />
     <ClInclude Include="SIFTmatching.h" />
   </ItemGroup>

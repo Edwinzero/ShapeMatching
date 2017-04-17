@@ -44,6 +44,16 @@ Eigen::Matrix3f Rot_z_mat(float rad) {
 Eigen::Matrix3f Euler_to_mat(const Eigen::Vector3f &euler) {
 	return Rot_z_mat(euler.z()) * Rot_y_mat(euler.y()) * Rot_x_mat(euler.x());
 }
+// R(z) * R(y) * R(x)
+Eigen::Matrix4f Euler_to_mat(const Eigen::Vector4f &euler) {
+	Eigen::Matrix3f m = Rot_z_mat(euler.z()) * Rot_y_mat(euler.y()) * Rot_x_mat(euler.x());
+	Eigen::Matrix4f mm;
+	mm << m(0), m(1), m(2), 0,
+		m(3), m(4), m(5), 0,
+		m(6), m(7), m(8), 0,
+		0, 0, 0, 1;
+	return mm;
+}
 
 void AffineTransformPointsFromAngle(std::vector< Eigen::Vector3f > &points, const Eigen::Vector3f &euler_angle, const Eigen::Vector3f &t) {
 	if (points.empty()) {
@@ -56,6 +66,18 @@ void AffineTransformPointsFromAngle(std::vector< Eigen::Vector3f > &points, cons
 		*it = rot * *it + t;
 	}
 }
+void AffineTransformPointsFromAngle(std::vector< Eigen::Vector4f > &points, const Eigen::Vector3f &euler_angle, const Eigen::Vector3f &t) {
+	if (points.empty()) {
+		return;
+	}
+	const float RAD = 3.1415926f / 180.0f;
+	Eigen::Vector4f rad = Eigen::Vector4f(euler_angle(0) * RAD, euler_angle(1) * RAD, euler_angle(2) * RAD, 0.0f);
+	Eigen::Matrix4f rot = Euler_to_mat(rad);
+	Eigen::Vector4f trans = Eigen::Vector4f(t(0), t(1), t(2), 0.0f);
+	for (std::vector<Eigen::Vector4f>::iterator it = points.begin(); it < points.end(); it++) {
+		*it = rot * *it + trans;
+	}
+}
 void AffineTransfomrPointsFromMat(std::vector< Eigen::Vector3f > &points, const Eigen::Matrix4f &mat) {
 	if (points.empty()) {
 		return;
@@ -66,12 +88,21 @@ void AffineTransfomrPointsFromMat(std::vector< Eigen::Vector3f > &points, const 
 	}
 }
 
+void ScalePoints(std::vector<Eigen::Vector4f> &points, const float scale = 1.0f) {
+	if (points.empty()) {
+		return;
+	}
+	for (std::vector<Eigen::Vector4f>::iterator it = points.begin(); it < points.end(); it++) {
+		*it = *it * scale;
+		it->w() /= scale;
+	}
+}
 void ScalePoints(std::vector<Eigen::Vector3f> &points, const float scale = 1.0f) {
 	if (points.empty()) {
 		return;
 	}
 	for (std::vector<Eigen::Vector3f>::iterator it = points.begin(); it < points.end(); it++) {
-		*it =  *it * scale;
+		*it = *it * scale;
 	}
 }
 

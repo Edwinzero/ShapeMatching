@@ -40,6 +40,9 @@
     <Filter Include="Header Files\Noise">
       <UniqueIdentifier>{37d68075-42c7-4c3d-8dfc-4360871dcd00}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\RGBD mapping">
+      <UniqueIdentifier>{dd13e731-0f69-4782-ac1e-18c0f1793895}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -119,9 +122,6 @@
     <ClInclude Include="GaussianNoise.h">
       <Filter>Header Files\Noise</Filter>
     </ClInclude>
-    <ClInclude Include="Point.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="cv_op.h">
       <Filter>Header Files\Utils</Filter>
     </ClInclude>
@@ -137,11 +137,17 @@
     <ClInclude Include="Sensor.h">
       <Filter>Header Files\Utils</Filter>
     </ClInclude>
-    <ClInclude Include="RGBDmapping.h">
-      <Filter>Header Files\Utils</Filter>
-    </ClInclude>
     <ClInclude Include="plyloader.h">
       <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="PointCloud.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RGBDmappingCPU.h">
+      <Filter>Header Files\RGBD mapping</Filter>
+    </ClInclude>
+    <ClInclude Include="RGBDmapping.h">
+      <Filter>Header Files\RGBD mapping</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

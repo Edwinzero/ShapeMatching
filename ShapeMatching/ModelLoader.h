@@ -157,6 +157,29 @@ public:
 		this->points.clear();
 		this->normals.clear();
 	}
+
+	void CopyToBuffer(std::vector<Eigen::Vector4f> &points, std::vector<Eigen::Vector4f> &normals) {
+		points.clear(); normals.clear();
+		points.resize(this->totalVert);
+		normals.resize(this->totalVert);
+		for (int i = 0; i < totalVert; i++) {
+			Eigen::Vector4f p; p.setZero();
+			p(0) = this->points[3 * i + 0];
+			p(1) = this->points[3 * i + 1];
+			p(2) = this->points[3 * i + 2];
+			p(3) = 1.0f;
+			points[i] = p;
+
+			Eigen::Vector4f n; n.setZero();
+			n(0) = this->normals[3 * i + 0];
+			n(1) = this->normals[3 * i + 1];
+			n(2) = this->normals[3 * i + 2];
+			n(3) = 0.0f;
+			normals[i] = n;
+		}
+		this->points.clear();
+		this->normals.clear();
+	}
 };
 
 #endif

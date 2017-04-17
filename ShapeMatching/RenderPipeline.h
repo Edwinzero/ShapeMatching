@@ -12,11 +12,10 @@
 #include <RenderUtils.h>
 #include <2Dcontent.h>
 
-#include <CLutils.h>
-#include <Eigen_op.h>
-#include <ModelLoader.h>
-#include <plyloader.h>
 #include <RGBDmapping.h>
+#include <PointCloud.h>
+#include <plyloader.h>
+#include <RGBDmappingCPU.h>
 
 // Feature
 #include <SIFTmatching.h>
@@ -30,35 +29,36 @@ unsigned int pre_screenWidth = 0;
 unsigned int pre_screenHeight = 0;
 bool show_debug_window = true;
 bool show_test_window = false;
-bool show_another_window = false;
-bool show_color_img_window = true;
-bool show_depth_img_window = true;
+bool show_cameraInfo_window = false;
+bool show_color_img_window = false;
+bool show_depth_img_window = false;
 
 Camera camera;
 // Sensor + Data
 std::vector<Sensor> sensors;
 
 // Registration
-std::vector<Vector3f> points0, points1;
-std::vector<Vector3f> normals0, normals1;
-bool doRegistration = false;
-FastGlobalReg fgr;
-Eigen::Matrix4f optMat;
-
-bool reComplieShader = false;
-GLuint GLPointRenderProgram;
-GLuint GLMocaPointRenderProgram;
+PointCloud pc0, pc1;
 GLmem object0, object1;
+FastGlobalReg fgr;
+bool doRegistration = false;
 
-
-// Rendering
+// PointCloud Rendering
 GLmem moca_model;
+
+// RGBD mapping + backprojection
 
 // Feature detection
 ImageTex colorTex;
 ImageTex depthTex;
 GLfbo imageCanvas;
 GLmem canvas;
+
+
+// GL programs
+bool reComplieShader = false;
+GLuint GLPointRenderProgram;
+GLuint GLMocaPointRenderProgram;
 GLuint GLGradientProgram;
 
 //================================
@@ -172,7 +172,7 @@ void DrawScene3D() {
 		glEnable(GL_PROGRAM_POINT_SIZE);
 		glMatrixMode(GL_MODELVIEW);
 		glPushMatrix();
-		if (points0.size()) {
+		if (pc0.point_size) {
 			glUseProgram(GLPointRenderProgram);
 			Eigen::Matrix4f proj = Eigen::Matrix4f::Identity();
 			Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
@@ -180,7 +180,7 @@ void DrawScene3D() {
 			glGetFloatv(GL_MODELVIEW_MATRIX, view.data());
 			glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "proj"), 1, GL_FALSE, proj.data());
 			glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "view"), 1, GL_FALSE, view.data());
-			glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "model"), 1, GL_FALSE, optMat.data());
+			glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "model"), 1, GL_FALSE, pc0.model.data());
 			glUniform3fv(glGetUniformLocation(GLPointRenderProgram, "color"), 1, Eigen::Vector3f(1.0f, 0.0f, 0.0f).data());
 			glBindVertexArray(object0.vao);
 			glDrawArrays(GL_POINTS, 0, object0.m_numVerts);
@@ -192,16 +192,15 @@ void DrawScene3D() {
 		glPopMatrix();
 		glMatrixMode(GL_MODELVIEW);
 		glPushMatrix();
-		if (points1.size()) {
+		if (pc1.point_size) {
 			glUseProgram(GLPointRenderProgram);
 			Eigen::Matrix4f proj = Eigen::Matrix4f::Identity();
 			Eigen::Matrix4f view = Eigen::Matrix4f::Identity(); 
-			Eigen::Matrix4f model = Eigen::Matrix4f::Identity();
 			glGetFloatv(GL_PROJECTION_MATRIX, proj.data());
 			glGetFloatv(GL_MODELVIEW_MATRIX, view.data());
 			glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "proj"), 1, GL_FALSE, proj.data());
 			glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "view"), 1, GL_FALSE, view.data());
-			glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "model"), 1, GL_FALSE,model.data());
+			glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "model"), 1, GL_FALSE,pc1.model.data());
 			glUniform3fv(glGetUniformLocation(GLPointRenderProgram, "color"), 1, Eigen::Vector3f(0.0f, 1.0f, 0.0f).data());
 			glBindVertexArray(object1.vao);
 			glDrawArrays(GL_POINTS, 0, object1.m_numVerts);
@@ -220,32 +219,35 @@ void DrawScene3D() {
 		}
 		glMatrixMode(GL_MODELVIEW);
 		glPopMatrix();
-		glMatrixMode(GL_MODELVIEW);
-		glPushMatrix();
-		if (moca_model.vao) {
-			glUseProgram(GLMocaPointRenderProgram);
-			Eigen::Matrix4f proj = Eigen::Matrix4f::Identity();
-			Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
-			Eigen::Matrix4f model = Eigen::Matrix4f::Identity();
-			model *= 1000.0f;
-			glGetFloatv(GL_PROJECTION_MATRIX, proj.data());
-			glGetFloatv(GL_MODELVIEW_MATRIX, view.data());
-			glUniformMatrix4fv(glGetUniformLocation(GLMocaPointRenderProgram, "proj"), 1, GL_FALSE, proj.data());
-			glUniformMatrix4fv(glGetUniformLocation(GLMocaPointRenderProgram, "view"), 1, GL_FALSE, view.data());
-			glUniformMatrix4fv(glGetUniformLocation(GLMocaPointRenderProgram, "model"), 1, GL_FALSE, model.data());
-			glUniform3fv(glGetUniformLocation(GLMocaPointRenderProgram, "color"), 1, Eigen::Vector3f(0.0f, 1.0f, 0.0f).data());
-			glBindVertexArray(moca_model.vao);
-			glDrawArrays(GL_POINTS, 0, moca_model.m_numVerts);
-			glBindVertexArray(0);
+		if (0) {
+			glMatrixMode(GL_MODELVIEW);
+			glPushMatrix();
+			if (moca_model.vao) {
+				glUseProgram(GLMocaPointRenderProgram);
+				Eigen::Matrix4f proj = Eigen::Matrix4f::Identity();
+				Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
+				Eigen::Matrix4f model = Eigen::Matrix4f::Identity();
+				model *= 1000.0f;
+				glGetFloatv(GL_PROJECTION_MATRIX, proj.data());
+				glGetFloatv(GL_MODELVIEW_MATRIX, view.data());
+				glUniformMatrix4fv(glGetUniformLocation(GLMocaPointRenderProgram, "proj"), 1, GL_FALSE, proj.data());
+				glUniformMatrix4fv(glGetUniformLocation(GLMocaPointRenderProgram, "view"), 1, GL_FALSE, view.data());
+				glUniformMatrix4fv(glGetUniformLocation(GLMocaPointRenderProgram, "model"), 1, GL_FALSE, model.data());
+				glUniform3fv(glGetUniformLocation(GLMocaPointRenderProgram, "color"), 1, Eigen::Vector3f(0.0f, 1.0f, 0.0f).data());
+				glBindVertexArray(moca_model.vao);
+				glDrawArrays(GL_POINTS, 0, moca_model.m_numVerts);
+				glBindVertexArray(0);
 
-			glUseProgram(0);
+				glUseProgram(0);
+			}
+			glMatrixMode(GL_MODELVIEW);
+			glPopMatrix();
+			glDisable(GL_PROGRAM_POINT_SIZE);
+
+			glMatrixMode(GL_PROJECTION);
+			glPopMatrix();
 		}
-		glMatrixMode(GL_MODELVIEW);
-		glPopMatrix();
-		glDisable(GL_PROGRAM_POINT_SIZE);
-
-		glMatrixMode(GL_PROJECTION);
-		glPopMatrix();
+	
 		//glPopAttrib();
 	}
 }
@@ -264,18 +266,18 @@ void drawGUI()
 		ImGui::Text("Debug information");
 		ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
 		if (ImGui::Button("Test Window")) show_test_window ^= 1;
-		if (ImGui::Button("Another Window")) show_another_window ^= 1;
+		if (ImGui::Button("Camera Info")) show_cameraInfo_window ^= 1;
 		if (ImGui::Button("Color Image Window")) show_color_img_window ^= 1;
 		if (ImGui::Button("Depth Image Window")) show_depth_img_window ^= 1;
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	}
 
 	// 2. Show another simple window, this time using an explicit Begin/End pair
-	if (show_another_window)
+	if (show_cameraInfo_window)
 	{
 		ImGui::SetNextWindowSize(ImVec2(200, 100), ImGuiSetCond_FirstUseEver);
-		ImGui::SetNextWindowPos(ImVec2(150, 20), ImGuiSetCond_FirstUseEver);
-		ImGui::Begin("Another Window", &show_another_window);
+		ImGui::SetNextWindowPos(ImVec2(0, screenHeight-350), ImGuiSetCond_FirstUseEver);
+		ImGui::Begin("Another Window", &show_cameraInfo_window);
 		ImGui::Text("Camera information");
 		glm::vec3 campos = camera.GetPos();
 		ImGui::Text("Camera position: (%.3f, %.3f, %.3f)", campos.x, campos.y, campos.z);
@@ -379,14 +381,6 @@ void Reshape(int w, int h)
 
 	// Set the viewport to be the entire window
 	glViewport(0, 0, w, h);
-
-	// Set the correct perspective.
-	//gluPerspective(45, ratio, 1.0f, 10000.0f);
-	//glMatrixMode(GL_PROJECTION);
-	//glViewport(0, 0, width, height);
-	//glLoadIdentity();
-	//glOrtho(0.f, w, 0.f, h, -1.f, 1.f);
-	//glOrtho(-2.0, 2.0, -2.0, 2.0, -2.0, 2.0);
 	glutPostRedisplay();
 }
 
@@ -397,8 +391,7 @@ void Update(void) {
 	if (doRegistration) {
 		fgr.NormalizePoints();
 		fgr.OptimizePairwise(false, 2, 0, 1);
-		optMat = fgr.GetRes().inverse();
-		//AffineTransfomrPointsFromMat(points0, optMat.inverse());
+		pc0.model = fgr.GetRes().inverse();
 		doRegistration = false;
 	}
 
@@ -406,13 +399,8 @@ void Update(void) {
 		GLPointRenderProgram = CompileGLShader("PointRender", "Shaders/PointRender.vs", "Shaders/PointRender.fs");
 		GLMocaPointRenderProgram = CompileGLShader("MOCA_PointRender", "Shaders/PointCloudRender.vs", "Shaders/PointCloudRender.fs");
 		reComplieShader = false;
+		printf("[SHADER] :: Compile done !!!\n");
 	}
-
-
-	// rgbd mapping
-	Sensor *sensor = &sensors[1];
-	cv::Mat reg;
-	//RGBD::DepthToRGBMapping(sensor, ,,reg)
 }
 
 //=========================================================================
@@ -560,7 +548,6 @@ void Init_OpenGL(int argc, char **argv, const char* title)
 
 	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_GLUTMAINLOOP_RETURNS);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE | GLUT_MULTISAMPLE);
-
 	glutInitWindowSize(screenWidth, screenHeight);
 	glutInitWindowPosition(200, 200);
 	glutCreateWindow(title);
@@ -578,16 +565,6 @@ void Init_OpenGL(int argc, char **argv, const char* title)
 	// shaders
 	Init_GLshader();
 
-	// virtual camera
-	{
-		camera.focus = glm::vec3(0.0f, 0.0f, 0.0);
-		camera.angle = glm::vec2(-30.0f, 0.0f);
-		camera.fov = glm::vec2(45.0f, 45.0f);
-		camera.apertureRadius = 0.01f;
-		camera.focalDistance = 100.0f;
-		camera.radius = 100.0f;
-	}
-
 	// callback
 	glutDisplayFunc(Render);
 	glutReshapeFunc(Reshape);
@@ -601,22 +578,27 @@ void Init_OpenGL(int argc, char **argv, const char* title)
 }
 
 void Init_RenderScene(void) {
-	PLYModelLoader pc0, pc1;
-	pc0.LoadModel("Depth_0000.ply");
-	pc1.LoadModel("Depth_0000.ply");
-	pc0.CopyToBuffer(points0, normals0);
-	pc1.CopyToBuffer(points1, normals1);
-	ScalePoints(points0, 50.0f);
-	ScalePoints(points1, 50.0f);
-	AffineTransformPointsFromAngle(points0, Eigen::Vector3f(20.0f, -50.0f, 70.0f), Eigen::Vector3f(-50.5f, +50.2f, -50.7f));
 
-	CreateGLmem(object0, points0, normals0);
-	CreateGLmem(object1, points1, normals1);
+	// virtual camera
+	{
+		camera.focus = glm::vec3(0.0f, 0.0f, 0.0);
+		camera.angle = glm::vec2(-30.0f, 0.0f);
+		camera.fov = glm::vec2(45.0f, 45.0f);
+		camera.apertureRadius = 0.01f;
+		camera.focalDistance = 100.0f;
+		camera.radius = 100.0f;
+	}
+	pc0.Init("Depth_0000.ply", "child0");
+	pc1.Init("Depth_0001.ply", "child1");
+	pc0.ScalePointData(50.0f);
+	pc1.ScalePointData(50.0f);
+	AffineTransformPointsFromAngle(pc0.points, Eigen::Vector3f(20.0f, -50.0f, 70.0f), Eigen::Vector3f(-50.5f, +50.2f, -50.7f));
 
-	fgr.LoadPoints(points0, points1);
-	fgr.LoadCorrespondence(points0);
-	optMat = Eigen::Matrix4f::Identity();
+	CreateGLmem(object0, pc0);
+	CreateGLmem(object1, pc1);
 
+	fgr.LoadPoints(pc0.points, pc1.points);
+	fgr.LoadCorrespondence(pc0.points);
 
 	PLYModel m_model("Data/textured_model.ply", 1, 1);
 	CreateGLmem(moca_model, m_model.positions, m_model.normals, m_model.colors);
@@ -637,20 +619,22 @@ void Init_Sensors(void) {
 			sensors[i].LoadSensorParameters(depPath, rgbPath);
 		}
 		// load dep to global params
-		LoadGlobalIRMatrix(sensors, "CapturedData/newSegData930/sensor-ir.mat");
-		LoadGlobalRGBMatrix(sensors, "../CapturedData/newSegData930/sensor-rgb.mat");
+		LoadGlobalIRMatrix(sensors, "newSegData930/sensor-ir.mat");
+		LoadGlobalRGBMatrix(sensors, "newSegData930/sensor-rgb.mat");
 	}
 
 	// Load images
 	{
 		char filepath[64];
-		//sprintf(filepath, "CapturedData/newSegData930/K1/Pose_%d.jpeg", frameID);
-		//testRGB = cv::imread(filepath);
-		//cv::flip(testRGB, testRGB, 1);
+		sprintf(filepath, "Data/K1/Pose_%d.jpeg", 666);
+		cv::Mat testRGB = cv::imread(filepath, CV_LOAD_IMAGE_COLOR);
+		cv::flip(testRGB, testRGB, 1);
+		ImgShow("rgb", testRGB, 960, 540);
 
-		//sprintf(filepath, "CapturedData/newSegData930/K1/Pose_%d.png", frameID);
-		//LoadFrame(testIR, filepath);
-		//ImgShow("depth", testIR, 512, 424);
+		sprintf(filepath, "Data/K1/Pose_%d.png", 666);
+		cv::Mat testDepth;
+		LoadFrame(testDepth, filepath);
+		ImgShow("depth", testDepth, 512, 424);
 	}
 }
 
