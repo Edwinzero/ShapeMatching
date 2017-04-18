@@ -20,7 +20,8 @@
 // Feature
 #include <SIFTmatching.h>
 // Registration
-#include <FastGlobalRegistration.h>
+#include <ICP.h>
+//#include <FastGlobalRegistration.h>
 
 using namespace std;
 unsigned int screenWidth = 1280;
@@ -40,13 +41,19 @@ std::vector<Sensor> sensors;
 // Registration
 PointCloud pc0, pc1;
 GLmem object0, object1;
-FastGlobalReg fgr;
-bool doRegistration = false;
+//FastGlobalReg fgr;
+bool doFGR = false;
+bool doICP = false;
 
 // PointCloud Rendering
 GLmem moca_model;
 
 // RGBD mapping + backprojection
+Mapping process;
+PointCloud Kpc0, Kpc1;
+GLmem Kobject0, Kobject1;
+cv::Mat depth0, depth1;
+cv::Mat color0, color1;
 
 // Feature detection
 ImageTex colorTex;
@@ -169,56 +176,102 @@ void DrawScene3D() {
 		glPopMatrix();
 
 		// Point cloud data
-		glEnable(GL_PROGRAM_POINT_SIZE);
-		glMatrixMode(GL_MODELVIEW);
-		glPushMatrix();
-		if (pc0.point_size) {
-			glUseProgram(GLPointRenderProgram);
-			Eigen::Matrix4f proj = Eigen::Matrix4f::Identity();
-			Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
-			glGetFloatv(GL_PROJECTION_MATRIX, proj.data());
-			glGetFloatv(GL_MODELVIEW_MATRIX, view.data());
-			glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "proj"), 1, GL_FALSE, proj.data());
-			glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "view"), 1, GL_FALSE, view.data());
-			glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "model"), 1, GL_FALSE, pc0.model.data());
-			glUniform3fv(glGetUniformLocation(GLPointRenderProgram, "color"), 1, Eigen::Vector3f(1.0f, 0.0f, 0.0f).data());
-			glBindVertexArray(object0.vao);
-			glDrawArrays(GL_POINTS, 0, object0.m_numVerts);
-			glBindVertexArray(0);
+		if (1) {
+			glEnable(GL_PROGRAM_POINT_SIZE);
+			glMatrixMode(GL_MODELVIEW);
+			glPushMatrix();
+			if (Kpc0.hasPoint) {
+				glUseProgram(GLPointRenderProgram);
+				Eigen::Matrix4f proj = Eigen::Matrix4f::Identity();
+				Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
+				glGetFloatv(GL_PROJECTION_MATRIX, proj.data());
+				glGetFloatv(GL_MODELVIEW_MATRIX, view.data());
+				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "proj"), 1, GL_FALSE, proj.data());
+				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "view"), 1, GL_FALSE, view.data());
+				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "model"), 1, GL_FALSE, pc0.model.data());
+				glUniform3fv(glGetUniformLocation(GLPointRenderProgram, "color"), 1, Eigen::Vector3f(1.0f, 0.0f, 0.0f).data());
+				glBindVertexArray(Kobject0.vao);
+				glDrawArrays(GL_POINTS, 0, Kobject0.m_numVerts);
+				glBindVertexArray(0);
 
-			glUseProgram(0);
+				glUseProgram(0);
+			}
+			glMatrixMode(GL_MODELVIEW);
+			glPopMatrix();
+			glMatrixMode(GL_MODELVIEW);
+			glPushMatrix();
+			if (Kpc1.hasPoint) {
+				glUseProgram(GLPointRenderProgram);
+				Eigen::Matrix4f proj = Eigen::Matrix4f::Identity();
+				Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
+				glGetFloatv(GL_PROJECTION_MATRIX, proj.data());
+				glGetFloatv(GL_MODELVIEW_MATRIX, view.data());
+				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "proj"), 1, GL_FALSE, proj.data());
+				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "view"), 1, GL_FALSE, view.data());
+				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "model"), 1, GL_FALSE, pc1.model.data());
+				glUniform3fv(glGetUniformLocation(GLPointRenderProgram, "color"), 1, Eigen::Vector3f(0.0f, 1.0f, 0.0f).data());
+				glBindVertexArray(Kobject1.vao);
+				glDrawArrays(GL_POINTS, 0, Kobject1.m_numVerts);
+				glBindVertexArray(0);
+
+				glUseProgram(0);
+			}
+			glMatrixMode(GL_MODELVIEW);
+			glPopMatrix();
 		}
-		glMatrixMode(GL_MODELVIEW);
-		glPopMatrix();
-		glMatrixMode(GL_MODELVIEW);
-		glPushMatrix();
-		if (pc1.point_size) {
-			glUseProgram(GLPointRenderProgram);
-			Eigen::Matrix4f proj = Eigen::Matrix4f::Identity();
-			Eigen::Matrix4f view = Eigen::Matrix4f::Identity(); 
-			glGetFloatv(GL_PROJECTION_MATRIX, proj.data());
-			glGetFloatv(GL_MODELVIEW_MATRIX, view.data());
-			glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "proj"), 1, GL_FALSE, proj.data());
-			glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "view"), 1, GL_FALSE, view.data());
-			glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "model"), 1, GL_FALSE,pc1.model.data());
-			glUniform3fv(glGetUniformLocation(GLPointRenderProgram, "color"), 1, Eigen::Vector3f(0.0f, 1.0f, 0.0f).data());
-			glBindVertexArray(object1.vao);
-			glDrawArrays(GL_POINTS, 0, object1.m_numVerts);
-			glBindVertexArray(0);
+		if (0) {
+			glEnable(GL_PROGRAM_POINT_SIZE);
+			glMatrixMode(GL_MODELVIEW);
+			glPushMatrix();
+			if (pc0.hasPoint) {
+				glUseProgram(GLPointRenderProgram);
+				Eigen::Matrix4f proj = Eigen::Matrix4f::Identity();
+				Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
+				glGetFloatv(GL_PROJECTION_MATRIX, proj.data());
+				glGetFloatv(GL_MODELVIEW_MATRIX, view.data());
+				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "proj"), 1, GL_FALSE, proj.data());
+				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "view"), 1, GL_FALSE, view.data());
+				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "model"), 1, GL_FALSE, pc0.model.data());
+				glUniform3fv(glGetUniformLocation(GLPointRenderProgram, "color"), 1, Eigen::Vector3f(1.0f, 0.0f, 0.0f).data());
+				glBindVertexArray(object0.vao);
+				glDrawArrays(GL_POINTS, 0, object0.m_numVerts);
+				glBindVertexArray(0);
 
-			glUseProgram(0);
-			//glEnableClientState(GL_VERTEX_ARRAY);
-			//glEnableClientState(GL_COLOR_ARRAY);
-			//glColor3f(0.0f, 1.0f, 0.0f);
-			//glVertexPointer(3, GL_FLOAT, sizeof(GLfloat) * 3, points1.data());
-			//glColorPointer(3, GL_FLOAT, sizeof(GLfloat) * 3, pc1.normals.data());
-			//glDrawArrays(GL_POINTS, 0, points1.size());
+				glUseProgram(0);
+			}
+			glMatrixMode(GL_MODELVIEW);
+			glPopMatrix();
+			glMatrixMode(GL_MODELVIEW);
+			glPushMatrix();
+			if (pc1.hasPoint) {
+				glUseProgram(GLPointRenderProgram);
+				Eigen::Matrix4f proj = Eigen::Matrix4f::Identity();
+				Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
+				glGetFloatv(GL_PROJECTION_MATRIX, proj.data());
+				glGetFloatv(GL_MODELVIEW_MATRIX, view.data());
+				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "proj"), 1, GL_FALSE, proj.data());
+				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "view"), 1, GL_FALSE, view.data());
+				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "model"), 1, GL_FALSE, pc1.model.data());
+				glUniform3fv(glGetUniformLocation(GLPointRenderProgram, "color"), 1, Eigen::Vector3f(0.0f, 1.0f, 0.0f).data());
+				glBindVertexArray(object1.vao);
+				glDrawArrays(GL_POINTS, 0, object1.m_numVerts);
+				glBindVertexArray(0);
 
-			//glDisableClientState(GL_COLOR_ARRAY);
-			//glDisableClientState(GL_VERTEX_ARRAY);
+				glUseProgram(0);
+				//glEnableClientState(GL_VERTEX_ARRAY);
+				//glEnableClientState(GL_COLOR_ARRAY);
+				//glColor3f(0.0f, 1.0f, 0.0f);
+				//glVertexPointer(3, GL_FLOAT, sizeof(GLfloat) * 3, points1.data());
+				//glColorPointer(3, GL_FLOAT, sizeof(GLfloat) * 3, pc1.normals.data());
+				//glDrawArrays(GL_POINTS, 0, points1.size());
+
+				//glDisableClientState(GL_COLOR_ARRAY);
+				//glDisableClientState(GL_VERTEX_ARRAY);
+			}
+			glMatrixMode(GL_MODELVIEW);
+			glPopMatrix();
 		}
-		glMatrixMode(GL_MODELVIEW);
-		glPopMatrix();
+		
 		if (0) {
 			glMatrixMode(GL_MODELVIEW);
 			glPushMatrix();
@@ -388,11 +441,21 @@ void Reshape(int w, int h)
 //		Update
 //=========================================================================
 void Update(void) {
-	if (doRegistration) {
-		fgr.NormalizePoints();
-		fgr.OptimizePairwise(false, 2, 0, 1);
-		pc0.model = fgr.GetRes().inverse();
-		doRegistration = false;
+	if (doFGR) {
+		//fgr.NormalizePoints();
+		//fgr.OptimizePairwise(false, 2, 0, 1);
+		//pc0.model = fgr.GetRes().inverse();
+		doFGR = false;
+	}
+
+	if (doICP) {
+		float err = 0.0;
+		Eigen::Matrix3f rot = Eigen::Matrix3f::Identity();
+		Eigen::Vector3f trans = Eigen::Vector3f::Zero();
+		PointToPoint_ICP(pc0.points, pc1.points, rot, trans, err);
+		//PointToPlane_ICP(pc0.points, pc1.points, pc1.normals, rot, trans, err);
+		ConstructMatEigenToEigen4(pc0.model, rot, trans);
+		doICP = false;
 	}
 
 	if (reComplieShader) {
@@ -434,7 +497,10 @@ bool keyboardEvent(unsigned char nChar, int nX, int nY)
 		show_debug_window = !show_debug_window;
 	}
 	if (nChar == 'r') {
-		doRegistration = !doRegistration;
+		doFGR = !doFGR;
+	}
+	if (nChar == 'e') {
+		doICP = !doICP;
 	}
 	if (nChar == 'c') {
 		reComplieShader = !reComplieShader;
@@ -529,6 +595,27 @@ void MouseMoveCallback(int x, int y)
 	glutPostRedisplay();
 }
 
+//=========================================================================
+//		Image Process methods
+//=========================================================================
+void CLImageProcess() {
+	// feature matching
+	{
+
+	}
+
+	// backproject
+	{
+		process.BackProjectPoints(sensors[0].cali_ir.intr.IntrVec(), sensors[0].dep_to_gl, (unsigned short*)depth0.ptr(), Kpc0.points, Kpc0.normals);
+		process.BackProjectPoints(sensors[1].cali_ir.intr.IntrVec(), sensors[1].dep_to_gl, (unsigned short*)depth1.ptr(), Kpc1.points, Kpc1.normals);
+		// link to vao
+		Kpc0.ScalePointData(50.0f);
+		Kpc1.ScalePointData(50.0f);
+		CreateGLmem(Kobject0, Kpc0);
+		CreateGLmem(Kobject1, Kpc1);	
+	}
+
+}
 
 //=========================================================================
 //		Initialize platforms
@@ -549,7 +636,7 @@ void Init_OpenGL(int argc, char **argv, const char* title)
 	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_GLUTMAINLOOP_RETURNS);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE | GLUT_MULTISAMPLE);
 	glutInitWindowSize(screenWidth, screenHeight);
-	glutInitWindowPosition(200, 200);
+	glutInitWindowPosition(500, 300);
 	glutCreateWindow(title);
 	fprintf(stdout, "INFO: OpenGL Version: %s\n", glGetString(GL_VERSION));
 
@@ -588,21 +675,23 @@ void Init_RenderScene(void) {
 		camera.focalDistance = 100.0f;
 		camera.radius = 100.0f;
 	}
-	pc0.Init("Depth_0000.ply", "child0");
-	pc1.Init("Depth_0001.ply", "child1");
-	pc0.ScalePointData(50.0f);
-	pc1.ScalePointData(50.0f);
-	AffineTransformPointsFromAngle(pc0.points, Eigen::Vector3f(20.0f, -50.0f, 70.0f), Eigen::Vector3f(-50.5f, +50.2f, -50.7f));
 
-	CreateGLmem(object0, pc0);
-	CreateGLmem(object1, pc1);
+	{
+		pc0.Init("Depth_0000.ply", "child0");
+		pc1.Init("Depth_0000.ply", "child1");
+		pc0.ScalePointData(50.0f);
+		pc1.ScalePointData(50.0f);
+		AffineTransformPointsFromAngle(pc0.points, Eigen::Vector3f(20.0f, -50.0f, 70.0f), Eigen::Vector3f(-50.5f, +50.2f, -50.7f));
 
-	fgr.LoadPoints(pc0.points, pc1.points);
-	fgr.LoadCorrespondence(pc0.points);
+		CreateGLmem(object0, pc0);
+		CreateGLmem(object1, pc1);
 
-	PLYModel m_model("Data/textured_model.ply", 1, 1);
-	CreateGLmem(moca_model, m_model.positions, m_model.normals, m_model.colors);
+		//fgr.LoadPoints(pc0.points, pc1.points);
+		//fgr.LoadCorrespondence(pc0.points);
 
+		PLYModel m_model("Data/textured_model.ply", 1, 1);
+		CreateGLmem(moca_model, m_model.positions, m_model.normals, m_model.colors);
+	}
 }
 
 void Init_Sensors(void) {
@@ -636,6 +725,24 @@ void Init_Sensors(void) {
 		LoadFrame(testDepth, filepath);
 		ImgShow("depth", testDepth, 512, 424);
 	}
+
+	// images for RGBD process
+	{
+		char filepath[64];
+		sprintf(filepath, "Data/K0/Pose_%d.jpeg", 666);
+		color0 = cv::imread(filepath, CV_LOAD_IMAGE_COLOR);
+		cv::flip(color0, color0, 1);
+
+		sprintf(filepath, "Data/K1/Pose_%d.jpeg", 666);
+		color1 = cv::imread(filepath, CV_LOAD_IMAGE_COLOR);
+		cv::flip(color1, color1, 1);
+
+		sprintf(filepath, "Data/K0/Pose_%d.png", 666);
+		LoadFrame(depth0, filepath);
+
+		sprintf(filepath, "Data/K1/Pose_%d.png", 666);
+		LoadFrame(depth1, filepath);
+	}
 }
 
 
@@ -647,7 +754,21 @@ void Init_2DContents() {
 }
 
 void Init_OpenCL(void) {
-
+	// init fusion
+	process.depth_img_size = cl::int2(512, 424);
+	process.color_img_size = cl::int2(1920, 1080);
+	process.bound[0] = cl::float3(-1.28, 0.00 - 0.5, -1.28);
+	process.bound[1] = cl::float3(+1.28, 2.56 - 0.5, +1.28);
+	process.global_size2 = 512;
+	process.local_size2 = 4;
+	process.global_size3 = 256;
+	process.local_size3 = 8;
+	process.Create();
+	{
+		std::vector<char> kernelfile;
+		LoadKernelText(kernelfile, "Kernels/RGBDmapping.cl");
+		process.UpdateShader(kernelfile.data());
+	}
 
 }
 
@@ -663,10 +784,14 @@ void Init_Imgui(void) {
 //=========================================================================
 void Run_Render(int argc, char **argv, const char* title){ 
 	Init_OpenGL(argc, argv, title);
+
 	Init_RenderScene();
-	Init_Sensors();
 	Init_2DContents();
+
+	Init_Sensors();
 	Init_OpenCL();
+	CLImageProcess();
+
 	Init_Imgui();
 
 	glutMainLoop();

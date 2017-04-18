@@ -8,7 +8,6 @@ class Mapping {
 public:
 	cl::int2			depth_img_size;		// depth map size
 	cl::int2			color_img_size;		// color map size
-	cl::int4			volume_size;		// volume size - volume space
 	cl::float4			bound[2];			// volume size - world space
 
 	cl::size2			global_size2;
@@ -74,8 +73,14 @@ public:
 		cq.Finish();
 	}
 
+	void DepthToRGBMapping(const cv::Mat &depth_intr, const cv::Mat &depth_extr,
+		const cv::Mat &color_intr, const cv::Mat &color_extr,
+		const unsigned short *depth, const cv::Mat &color) {
+
+	}
+
 	void BackProjectPoints(const cv::Mat &intr, const cv::Mat &extr, const unsigned short *depth,
-		std::vector<cl::float4> &points, std::vector<cl::float4> &normals) {
+		std::vector<Eigen::Vector4f> &points, std::vector<Eigen::Vector4f> &normals) {
 		// K
 		std::vector<float> K;
 		MatToVec(intr, K);
@@ -100,12 +105,12 @@ public:
 		// backprojection
 		cq.NDRangeKernel2((kn_d2p << mem_d, mem_p, depth_img_size, K), global_size2, local_size2);
 		cq.NDRangeKernel2((kn_p2w << mem_p, mem_w, depth_img_size, M), global_size2, local_size2);
-		//cq.NDRangeKernel2((kn_w2n << mem_w, mem_n, image_size), global_size2, local_size2);
+		cq.NDRangeKernel2((kn_p2n << mem_w, mem_n, depth_img_size), global_size2, local_size2);
 
 		points.resize(depth_img_size.area());
-		//normals.resize(depth_img_size.area());
+		normals.resize(depth_img_size.area());
 		cq.ReadBuffer(mem_w, CL_TRUE, points);
-		//cq.ReadBuffer(mem_n, CL_TRUE, normals);
+		cq.ReadBuffer(mem_n, CL_TRUE, normals);
 	}
 
 };

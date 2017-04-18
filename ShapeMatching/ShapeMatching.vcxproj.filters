@@ -149,6 +149,12 @@
     <ClInclude Include="RGBDmapping.h">
       <Filter>Header Files\RGBD mapping</Filter>
     </ClInclude>
+    <ClInclude Include="ICPRender.h">
+      <Filter>Header Files\Reigstration</Filter>
+    </ClInclude>
+    <ClInclude Include="ICP.h">
+      <Filter>Header Files\Reigstration</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="IMGUI\imgui.ini">

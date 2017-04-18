@@ -46,7 +46,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v100</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -79,15 +79,16 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <Optimization>Disabled</Optimization>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>E:\GLWrappers\opencv\build\include;E:\GLWrappers\eigen-3.3.1;C:\GLWrappers\flann\include;C:\GLWrappers\eigen-5.2.6;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include;C:\GLWrappers\opencv\build\include;$(SolutionDir);$(ProjectDir)imgui;$(ProjectDir);$(SolutionDir)Depends\libjpeg-turbo;$(SolutionDir)Depends\glm;$(SolutionDir)Depends\OpenGL;$(SolutionDir)Depends;$(SolutionDir)Depends\imgui\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\GLWrappers\opencv\build\include;E:\GLWrappers\eigen-3.3.1;E:\GLWrappers\flann1.71\flann\include;C:\GLWrappers\flann\include;C:\GLWrappers\eigen-5.2.6;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include;C:\GLWrappers\opencv\build\include;$(SolutionDir);$(ProjectDir)imgui;$(ProjectDir);$(SolutionDir)Depends\libjpeg-turbo;$(SolutionDir)Depends\glm;$(SolutionDir)Depends\OpenGL;$(SolutionDir)Depends;$(SolutionDir)Depends\imgui\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\lib\x64;C:\GLWrappers\flann\lib;E:\GLWrappers\opencv\build\x64\vc10\lib;C:\GLWrappers\opencv\build\x64\vc10\lib;$(SolutionDir)Depends;$(SolutionDir)Depends\OpenGL\lib\x86_64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;freeglutd.lib;glew64.lib;SOIL.lib;opencv_core2411d.lib;opencv_calib3d2411d.lib;opencv_imgproc2411d.lib;opencv_highgui2411d.lib;opencv_features2d2411d.lib;opencv_nonfree2411d.lib;opencv_flann2411d.lib;flann.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\lib\x64;C:\GLWrappers\flann\lib;E:\GLWrappers\flann1.71\flann\lib;E:\GLWrappers\opencv\build\x64\vc10\lib;C:\GLWrappers\opencv\build\x64\vc10\lib;$(SolutionDir)Depends;$(SolutionDir)Depends\OpenGL\lib\x86_64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opengl32.lib;freeglutd.lib;glew64.lib;OpenCL.lib;SOIL.lib;opencv_core2411d.lib;opencv_calib3d2411d.lib;opencv_imgproc2411d.lib;opencv_highgui2411d.lib;opencv_features2d2411d.lib;opencv_nonfree2411d.lib;opencv_flann2411d.lib;flann.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <OptimizeReferences>
+      </OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -110,10 +111,14 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>E:\GLWrappers\opencv\build\include;E:\GLWrappers\eigen-3.3.1;E:\GLWrappers\flann1.71\flann\include;C:\GLWrappers\flann\include;C:\GLWrappers\eigen-5.2.6;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include;C:\GLWrappers\opencv\build\include;$(SolutionDir);$(ProjectDir)imgui;$(ProjectDir);$(SolutionDir)Depends\libjpeg-turbo;$(SolutionDir)Depends\glm;$(SolutionDir)Depends\OpenGL;$(SolutionDir)Depends;$(SolutionDir)Depends\imgui\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\lib\x64;C:\GLWrappers\flann\lib;E:\GLWrappers\flann1.71\flann\lib;E:\GLWrappers\opencv\build\x64\vc10\lib;C:\GLWrappers\opencv\build\x64\vc10\lib;$(SolutionDir)Depends;$(SolutionDir)Depends\OpenGL\lib\x86_64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opengl32.lib;freeglutd.lib;glew64.lib;OpenCL.lib;SOIL.lib;opencv_core2411d.lib;opencv_calib3d2411d.lib;opencv_imgproc2411d.lib;opencv_highgui2411d.lib;opencv_features2d2411d.lib;opencv_nonfree2411d.lib;opencv_flann2411d.lib;flann.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -135,6 +140,8 @@
     <ClInclude Include="FPFH.h" />
     <ClInclude Include="GaussianNoise.h" />
     <ClInclude Include="GLobjects.h" />
+    <ClInclude Include="ICP.h" />
+    <ClInclude Include="ICPRender.h" />
     <ClInclude Include="IMGUI\imconfig.h" />
     <ClInclude Include="IMGUI\imgui.h" />
     <ClInclude Include="IMGUI\imgui_impl_glut.h" />

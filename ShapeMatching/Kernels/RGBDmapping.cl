@@ -1,6 +1,6 @@
 // float3 is considered as float4 by OpenCL
 // alignment can also be enforced by using __attribute__ ((aligned (16)));
-#pragma OPENCL EXTENSION cl_khr_global_int32_base_atomics:enable
+#pragma OPENCL EXTENSION cl_khr_global_int32_base_atomics: enable
 #pragma OPENCL EXTENSION cl_khr_local_int32_base_atomics : enable
 #define MAX_DEPTH (10000.0f)
 // stage 1: backproject points (for display)
@@ -89,5 +89,9 @@ float3 get_normal( __global float3 *normal_map, int2 dim, float2 v ) {
 }
 
 
-
+__kernel void depth_to_color(__global unsigned short *depth, __global uchar3 *color, float4 Dintr, float4 Cintr, float16 Dextr, float16 Cextr)
+{
+	int x = get_global_id(0);
+	int y = get_global_id(1);
+}
 

@@ -2,7 +2,7 @@
 #ifndef _FAST_GLOBAL_REIGISTRATION_H
 #define _FAST_GLOBAL_REIGISTRATION_H
 #include <vector>
-#include <flann\flann.hpp>
+#include <flann/flann.hpp>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <Eigen\Dense>
