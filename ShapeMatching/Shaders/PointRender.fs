@@ -6,5 +6,7 @@ uniform vec3 color;
 layout (location = 0) out vec4 out_color;
 
 void main(){
-    out_color = vec4(color, 1.0);
+    float gamma = 2.2;
+    vec3 corrected_color = pow(color, vec3(1.0/gamma));
+    out_color = vec4(corrected_color, 1.0);
 }

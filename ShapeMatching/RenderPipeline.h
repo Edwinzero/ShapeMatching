@@ -21,7 +21,7 @@
 #include <SIFTmatching.h>
 // Registration
 #include <ICP.h>
-//#include <FastGlobalRegistration.h>
+#include <FastGlobalRegistration.h>
 
 using namespace std;
 unsigned int screenWidth = 1280;
@@ -41,7 +41,7 @@ std::vector<Sensor> sensors;
 // Registration
 PointCloud pc0, pc1;
 GLmem object0, object1;
-//FastGlobalReg fgr;
+FastGlobalReg fgr;
 bool doFGR = false;
 bool doICP = false;
 
@@ -442,9 +442,9 @@ void Reshape(int w, int h)
 //=========================================================================
 void Update(void) {
 	if (doFGR) {
-		//fgr.NormalizePoints();
-		//fgr.OptimizePairwise(false, 2, 0, 1);
-		//pc0.model = fgr.GetRes().inverse();
+		fgr.NormalizePoints();
+		fgr.OptimizePairwise(false, 2, 0, 1);
+		pc0.model = fgr.GetRes().inverse();
 		doFGR = false;
 	}
 
@@ -686,8 +686,8 @@ void Init_RenderScene(void) {
 		CreateGLmem(object0, pc0);
 		CreateGLmem(object1, pc1);
 
-		//fgr.LoadPoints(pc0.points, pc1.points);
-		//fgr.LoadCorrespondence(pc0.points);
+		fgr.LoadPoints(pc0.points, pc1.points);
+		fgr.LoadCorrespondence(pc0.points);
 
 		PLYModel m_model("Data/textured_model.ply", 1, 1);
 		CreateGLmem(moca_model, m_model.positions, m_model.normals, m_model.colors);
