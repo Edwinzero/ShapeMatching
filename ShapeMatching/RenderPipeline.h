@@ -21,7 +21,7 @@
 #include <SIFTmatching.h>
 // Registration
 #include <ICP.h>
-#include <FastGlobalRegistration.h>
+//#include <FastGlobalRegistration.h>
 
 using namespace std;
 unsigned int screenWidth = 1280;
@@ -41,9 +41,10 @@ std::vector<Sensor> sensors;
 // Registration
 PointCloud pc0, pc1;
 GLmem object0, object1;
-FastGlobalReg fgr;
+//FastGlobalReg fgr;
 bool doFGR = false;
 bool doICP = false;
+bool doReset = false;
 
 // PointCloud Rendering
 GLmem moca_model;
@@ -188,7 +189,7 @@ void DrawScene3D() {
 				glGetFloatv(GL_MODELVIEW_MATRIX, view.data());
 				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "proj"), 1, GL_FALSE, proj.data());
 				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "view"), 1, GL_FALSE, view.data());
-				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "model"), 1, GL_FALSE, pc0.model.data());
+				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "model"), 1, GL_FALSE, Kpc0.model.data());
 				glUniform3fv(glGetUniformLocation(GLPointRenderProgram, "color"), 1, Eigen::Vector3f(1.0f, 0.0f, 0.0f).data());
 				glBindVertexArray(Kobject0.vao);
 				glDrawArrays(GL_POINTS, 0, Kobject0.m_numVerts);
@@ -208,7 +209,7 @@ void DrawScene3D() {
 				glGetFloatv(GL_MODELVIEW_MATRIX, view.data());
 				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "proj"), 1, GL_FALSE, proj.data());
 				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "view"), 1, GL_FALSE, view.data());
-				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "model"), 1, GL_FALSE, pc1.model.data());
+				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "model"), 1, GL_FALSE, Kpc1.model.data());
 				glUniform3fv(glGetUniformLocation(GLPointRenderProgram, "color"), 1, Eigen::Vector3f(0.0f, 1.0f, 0.0f).data());
 				glBindVertexArray(Kobject1.vao);
 				glDrawArrays(GL_POINTS, 0, Kobject1.m_numVerts);
@@ -219,7 +220,7 @@ void DrawScene3D() {
 			glMatrixMode(GL_MODELVIEW);
 			glPopMatrix();
 		}
-		if (0) {
+		if (1) {
 			glEnable(GL_PROGRAM_POINT_SIZE);
 			glMatrixMode(GL_MODELVIEW);
 			glPushMatrix();
@@ -442,9 +443,9 @@ void Reshape(int w, int h)
 //=========================================================================
 void Update(void) {
 	if (doFGR) {
-		fgr.NormalizePoints();
-		fgr.OptimizePairwise(false, 2, 0, 1);
-		pc0.model = fgr.GetRes().inverse();
+		//fgr.NormalizePoints();
+		//fgr.OptimizePairwise(false, 2, 0, 1);
+		//pc0.model = fgr.GetRes().inverse();
 		doFGR = false;
 	}
 
@@ -456,6 +457,12 @@ void Update(void) {
 		//PointToPlane_ICP(pc0.points, pc1.points, pc1.normals, rot, trans, err);
 		ConstructMatEigenToEigen4(pc0.model, rot, trans);
 		doICP = false;
+	}
+
+	if (doReset) {
+		Eigen::Matrix4f tmp = pc0.model.inverse();
+		pc0.model = tmp; // eigen mat cant assign to itself
+		doReset = false;
 	}
 
 	if (reComplieShader) {
@@ -501,6 +508,9 @@ bool keyboardEvent(unsigned char nChar, int nX, int nY)
 	}
 	if (nChar == 'e') {
 		doICP = !doICP;
+	}
+	if (nChar == 't') {
+		doReset = !doReset;
 	}
 	if (nChar == 'c') {
 		reComplieShader = !reComplieShader;
@@ -686,8 +696,8 @@ void Init_RenderScene(void) {
 		CreateGLmem(object0, pc0);
 		CreateGLmem(object1, pc1);
 
-		fgr.LoadPoints(pc0.points, pc1.points);
-		fgr.LoadCorrespondence(pc0.points);
+		//fgr.LoadPoints(pc0.points, pc1.points);
+		//fgr.LoadCorrespondence(pc0.points);
 
 		PLYModel m_model("Data/textured_model.ply", 1, 1);
 		CreateGLmem(moca_model, m_model.positions, m_model.normals, m_model.colors);

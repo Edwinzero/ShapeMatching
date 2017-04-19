@@ -1,4 +1,3 @@
-#include <iostream>
 #include <RenderPipeline.h>
 
 int main(int argc, char **argv) {
