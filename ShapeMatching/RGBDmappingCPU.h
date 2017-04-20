@@ -8,9 +8,42 @@
 #endif
 double round(double d)
 {
-	return floor(d + 0.5);
+	return floor(d - 0.5);
 }
 namespace RGBD {
+	// undistort image
+	cv::Point2i UndistortImage(int x, int y, cv::Mat &discoefs) {
+		float k1 = discoefs.at<double>(0);
+		float k2 = discoefs.at<double>(1);
+		float k3 = discoefs.at<double>(4);
+		float p1 = discoefs.at<double>(2);
+		float p2 = discoefs.at<double>(3);
+		int r2 = x*x + y*y;
+		int _2xy = 2 * x * y;
+		int xx = x + x*r2 * (k1 + k2*r2 + k3*r2*r2) + 2 * p1*y + p2*r2 + 2 * p2*x*x;
+		int yy = y + y*r2 * (k1 + k2*r2 + k3*r2*r2) + 2 * p2*x + p1*r2 + 2 * p1*y*y;
+		return cv::Point2i(xx, yy);
+	}
+
+	// img * intr (transfer image to 3D points cam space)
+	cv::Point3f ImgToPoint(cv::Mat &intr, cv::Mat &discoefs, int x, int y, float d, const float scalar = 1) {
+
+		// here x indicates row, y indicates columns
+		float fx = intr.at<double>(0) * scalar;
+		float fy = intr.at<double>(1) * scalar;
+		float cx = intr.at<double>(2) * scalar;
+		float cy = intr.at<double>(3) * scalar;
+
+		cv::Point2i correct_pos(0, 0);
+		correct_pos = UndistortImage(x, y, discoefs);
+
+		cv::Point3f res;
+		res.x = (float)((correct_pos.x - cx) * d / fx);
+		res.y = (float)((correct_pos.y - cy) * d / fy);
+		res.z = d;
+		return res;
+	}
+
 	// img * intr (transfer image to 3D points cam space)
 	cv::Point3f ImgToPoint(cv::Mat &intr, int x, int y, float d, const float scalar = 1) {
 		cv::Point3f res;
@@ -19,29 +52,20 @@ namespace RGBD {
 		float fy = intr.at<double>(1) * scalar;
 		float cx = intr.at<double>(2) * scalar;
 		float cy = intr.at<double>(3) * scalar;
-		res.x = (float)((x - cx) * d / fx);
-		res.y = (float)((y - cy) * d / fy);
+		res.x = (((float)x - cx) / fx) * d;
+		res.y = (((float)y - cy) / fy) * d;
 		res.z = d;
 		return res;
 	}
+
 	// transfer image from cam space to sensor space then to other cam space for the same Kinect
 	cv::Point2i PointToImg(const cv::Mat &trans, cv::Mat &discoefs, cv::Mat &rgb_intr, cv::Point3f &pt) {
 		cv::Point3f color_pt = trans * pt;
 		float x = color_pt.x / color_pt.z;
 		float y = color_pt.y / color_pt.z;
-		float k1 = discoefs.at<double>(0);
-		float k2 = discoefs.at<double>(1);
-		float k3 = discoefs.at<double>(4);
-		float p1 = discoefs.at<double>(2);
-		float p2 = discoefs.at<double>(3);
-		float r2 = x*x + y*y;
-		float _2xy = 2 * x * y;
-		float _kr = (1.0f + r2*(k1 + r2*(k2 + r2 * k3)));
-		float xx = x * _kr + p1 * _2xy + p2 * (r2 + 2 * x*x);
-		float yy = y * _kr + p2 * _2xy + p1 * (r2 + 2 * y*y);
 
 		cv::Point2i correlation;
-		correlation.x = (int)round((x * (float)rgb_intr.at<double>(0)) + (float)rgb_intr.at<double>(2)) + 5;
+		correlation.x = (int)round((x * (float)rgb_intr.at<double>(0)) + (float)rgb_intr.at<double>(2));
 		correlation.y = (int)round((y * (float)rgb_intr.at<double>(1)) + (float)rgb_intr.at<double>(3));
 		return correlation;
 	}

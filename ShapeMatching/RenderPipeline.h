@@ -12,8 +12,8 @@
 #include <RenderUtils.h>
 #include <2Dcontent.h>
 
-#include <RGBDmapping.h>
 #include <PointCloud.h>
+#include <RGBDmapping.h>
 #include <plyloader.h>
 #include <RGBDmappingCPU.h>
 
@@ -220,7 +220,7 @@ void DrawScene3D() {
 			glMatrixMode(GL_MODELVIEW);
 			glPopMatrix();
 		}
-		if (1) {
+		if (0) {
 			glEnable(GL_PROGRAM_POINT_SIZE);
 			glMatrixMode(GL_MODELVIEW);
 			glPushMatrix();
@@ -622,7 +622,14 @@ void CLImageProcess() {
 		Kpc0.ScalePointData(50.0f);
 		Kpc1.ScalePointData(50.0f);
 		CreateGLmem(Kobject0, Kpc0);
-		CreateGLmem(Kobject1, Kpc1);	
+		CreateGLmem(Kobject1, Kpc1);
+
+
+		cv::Mat res = cv::Mat(cv::Size(512, 424), CV_8UC3, cv::Scalar(0));
+		process.DepthToRGBMapping(sensors[0].cali_ir.intr.IntrVec(), sensors[0].cali_ir.extr,
+			sensors[0].cali_rgb.intr.IntrVec(), sensors[0].cali_rgb.extr,
+			(unsigned short*)depth0.ptr(), color0, res);
+		ImgShow("CL mapping", res, 512, 424);
 	}
 
 }
@@ -686,7 +693,7 @@ void Init_RenderScene(void) {
 		camera.radius = 100.0f;
 	}
 
-	{
+	if(0){
 		pc0.Init("Depth_0000.ply", "child0");
 		pc1.Init("Depth_0000.ply", "child1");
 		pc0.ScalePointData(50.0f);
@@ -752,6 +759,12 @@ void Init_Sensors(void) {
 
 		sprintf(filepath, "Data/K1/Pose_%d.png", 666);
 		LoadFrame(depth1, filepath);
+	}
+	// test
+	{
+		cv::Mat res;
+		RGBD::DepthToRGBMapping(sensors[1], color1, depth1, res);
+		ImgShow("rgbd mapping", res, res.cols, res.rows);
 	}
 }
 

@@ -2,6 +2,8 @@
 #ifndef _RGBD_MAPPING_CL_H
 #define _RGBD_MAPPING_CL_H
 #include <CLutils.h>
+#include <cv_op.h>
+#include <Eigen_op.h>
 #include <Sensor.h>
 
 class Mapping {
@@ -35,6 +37,7 @@ public:
 	cl::Mem				mem_w; // point map - world space
 
 	cl::Mem				mem_c; // color map
+	cl::Mem				mem_map; // mapped buffer
 
 public:
 	void Create(void) {
@@ -50,7 +53,8 @@ public:
 		mem_n.CreateBuffer(context, CL_MEM_READ_WRITE, depth_img_size.area() * sizeof(cl_float4));
 		mem_w.CreateBuffer(context, CL_MEM_READ_WRITE, depth_img_size.area() * sizeof(cl_float4));
 
-		mem_c.CreateBuffer(context, CL_MEM_READ_WRITE, color_img_size.area() * sizeof(cl_float4));
+		mem_c.CreateBuffer(context, CL_MEM_READ_WRITE, color_img_size.area() * sizeof(cl_uchar3));
+		mem_map.CreateBuffer(context, CL_MEM_READ_WRITE, color_img_size.area() * sizeof(cl_uchar3));
 	}
 
 
@@ -75,8 +79,29 @@ public:
 
 	void DepthToRGBMapping(const cv::Mat &depth_intr, const cv::Mat &depth_extr,
 		const cv::Mat &color_intr, const cv::Mat &color_extr,
-		const unsigned short *depth, const cv::Mat &color) {
+		const unsigned short *depth, const cv::Mat &color, cv::Mat &res) {
+		// K
+		std::vector<float> DK;
+		MatToVec(depth_intr, DK);
+		std::vector<float> CK;
+		MatToVec(color_intr, CK);
 
+		// M
+		std::vector<float> DM;
+		std::vector<float> CM;
+		// transpose extr will make 0001 to column 3
+		MatToVec(depth_extr.t(), DM);
+		MatToVec(color_extr.t(), CM);
+
+		// color
+		cq.WriteBuffer(mem_c, CL_TRUE, 0, color.cols*color.rows * sizeof(cl_uchar3), color.ptr());
+
+		// rgbd mapping
+		//cq.NDRangeKernel2((kn_d2p << mem_d, mem_p, depth_img_size, DK), global_size2, local_size2);
+		//cq.NDRangeKernel2((kn_p2w << mem_p, mem_w, depth_img_size, DM), global_size2, local_size2);
+		cq.NDRangeKernel2((kn_d2c << mem_w, mem_c, mem_map, depth_img_size, color_img_size, DK, CK, DM, CM), cl::size2(2048, 2048), local_size2);
+		res = cv::Mat(cv::Size(512,424), CV_8UC3, cv::Scalar(0));
+		cq.ReadBuffer(mem_map, CL_TRUE, 0, res.cols*res.rows * sizeof(cl_uchar3), res.ptr());
 	}
 
 	void BackProjectPoints(const cv::Mat &intr, const cv::Mat &extr, const unsigned short *depth,
