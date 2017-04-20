@@ -74,6 +74,8 @@ namespace RGBD {
 	void DepthToRGBMapping(Sensor &sensor, cv::Mat &rgb, cv::Mat &dep, cv::Mat &res) {
 		res = cv::Mat(dep.size(), CV_8UC3, cv::Scalar(0));
 		cv::Mat trans = sensor.cali_rgb.extr * sensor.cali_ir.extr.inv();
+		std::cout << trans << std::endl;
+		printf("dkjfklasjdkfaksdjklfjkasdkfl \n");
 		//unsigned short *row_ptr;
 		for (int y = 0; y < res.rows; y++) {
 			//row_ptr = dep.ptr<unsigned short>(y);

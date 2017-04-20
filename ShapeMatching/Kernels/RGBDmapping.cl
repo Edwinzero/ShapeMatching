@@ -2,8 +2,17 @@
 // alignment can also be enforced by using __attribute__ ((aligned (16)));
 #pragma OPENCL EXTENSION cl_khr_global_int32_base_atomics: enable
 #pragma OPENCL EXTENSION cl_khr_local_int32_base_atomics : enable
-#pragma OPENCL EXTENSION cl_khr_fp64: enable
+
+#ifdef DOUBLE_SUPPORT
+#ifdef cl_amd_fp64
+#pragma OPENCL EXTENSION cl_amd_fp64:enable
+#elif defined (cl_khr_fp64)
+#pragma OPENCL EXTENSION cl_khr_fp64:enable
+#endif
+#endif
+
 #define MAX_DEPTH (10000.0f)
+
 // stage 1: backproject points (for display)
 __kernel void depth_to_point(__global unsigned short* depth, __global float3 *points, int2 dim, float4 IK)
 {
@@ -91,25 +100,34 @@ float3 get_normal( __global float3 *normal_map, int2 dim, float2 v ) {
 
 
 
-__kernel void depth_to_color(__global float3 *worlds, __global uchar3 *color, __global uchar3 *mapbuf,
+__kernel void depth_to_color(__global float3 *points, __global uchar3 *color, __global uchar3 *mapbuf,
 							 int2 ddim, int2 cdim, 
-							 float4 Dintr, float4 Cintr, float16 Dextr, float16 Cextr)
+							 float4 Dintr, float4 Cintr, float16 M)
 {
 	int x = get_global_id(0);
 	int y = get_global_id(1);
 	if(x >= ddim.x || y >= ddim.y){ return; }
 	int id = y * ddim.x + x;
 
-	float3 c_p = Cextr.lo.lo.xyz * worlds[id];
+	float3 p = points[id];
+	// transform point from world space to color space
+	float3 c_p = M.lo.lo.xyz * p.x + M.lo.hi.xyz * p.y + M.hi.lo.xyz * p.z + M.hi.hi.xyz;
+
 	float2 xy = (float2)(c_p.x / c_p.z , c_p.y / c_p.z);
 	int2 uv = (int2)(0, 0);
-	uv = convert_int2_rtz((xy * Cintr.lo) + Cintr.hi);
+	uv.x = (int)round(xy.x * Cintr.x + Cintr.z);
+	uv.y = (int)round(xy.y * Cintr.y + Cintr.w);
+
 	if(uv.x < 0 || uv.x >= cdim.x || uv.y < 0 || uv.y >= cdim.y){
-		mapbuf[id] = uchar3(0, 0, 0);
+		mapbuf[id] = (uchar3)(0, 0, 0);
 		return;
 	}
-
 	int cid = uv.y * cdim.x + uv.x;
-	mapbuf[id] = color[cid];
+	uchar3 co = (uchar3)(0, 0, 0);
+	if(cid >= (cdim.x*cdim.y) || cid < 0){
+		return;
+	}
+	co = color[cid];
+	mapbuf[id] = co;
 }
 

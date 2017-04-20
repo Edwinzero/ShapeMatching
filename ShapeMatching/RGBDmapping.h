@@ -3,6 +3,7 @@
 #define _RGBD_MAPPING_CL_H
 #include <CLutils.h>
 #include <cv_op.h>
+#include <opencv2\ocl\ocl.hpp>
 #include <Eigen_op.h>
 #include <Sensor.h>
 
@@ -54,7 +55,7 @@ public:
 		mem_w.CreateBuffer(context, CL_MEM_READ_WRITE, depth_img_size.area() * sizeof(cl_float4));
 
 		mem_c.CreateBuffer(context, CL_MEM_READ_WRITE, color_img_size.area() * sizeof(cl_uchar3));
-		mem_map.CreateBuffer(context, CL_MEM_READ_WRITE, color_img_size.area() * sizeof(cl_uchar3));
+		mem_map.CreateBuffer(context, CL_MEM_READ_WRITE, depth_img_size.area() * sizeof(cl_uchar3));
 	}
 
 
@@ -79,7 +80,7 @@ public:
 
 	void DepthToRGBMapping(const cv::Mat &depth_intr, const cv::Mat &depth_extr,
 		const cv::Mat &color_intr, const cv::Mat &color_extr,
-		const unsigned short *depth, const cv::Mat &color, cv::Mat &res) {
+		const unsigned short *depth, const cv::Mat &color, cv::Mat &res, std::vector<Eigen::Vector4f> &points) {
 		// K
 		std::vector<float> DK;
 		MatToVec(depth_intr, DK);
@@ -87,21 +88,62 @@ public:
 		MatToVec(color_intr, CK);
 
 		// M
-		std::vector<float> DM;
-		std::vector<float> CM;
+		std::vector<float> M;
 		// transpose extr will make 0001 to column 3
-		MatToVec(depth_extr.t(), DM);
-		MatToVec(color_extr.t(), CM);
+		cv::Mat trans = color_extr * depth_extr.inv();
+		std::cout << trans << std::endl;
+		MatToVec(trans.t(), M);
 
 		// color
-		cq.WriteBuffer(mem_c, CL_TRUE, 0, color.cols*color.rows * sizeof(cl_uchar3), color.ptr());
+		//cq.WriteBuffer(mem_d, CL_TRUE, 0, depth_img_size.area() * sizeof(cl_ushort), depth);
+		std::vector<uchar> colorbuf(color.cols*color.rows*color.channels());
+		if (color.isContinuous()) {
+			int c = color.channels();
+			for (int y = 0; y < color.rows; y++) {
+				for (int x = 0; x < color.cols; x++) {
+					int id = c*(y*color.cols + x);
+					colorbuf[id] = color.at<cv::Vec3b>(y, x)[0];
+					colorbuf[id + 1] = color.at<cv::Vec3b>(y, x)[1];
+					colorbuf[id + 2] = color.at<cv::Vec3b>(y, x)[2];
+				}
+			}
+		}
+#if 0 
+		// test colorbuf
+		cv::Mat test(cv::Size(1920, 1080), CV_8UC3, cv::Scalar(0));
+		for (int y = 0; y < test.rows; y++) {
+			for (int x = 0; x < test.cols; x++) {
+				int id = 3*(y*test.cols + x);
+				test.at<cv::Vec3b>(y, x)[0] = colorbuf[id];
+				test.at<cv::Vec3b>(y, x)[1] = colorbuf[id + 1];
+				test.at<cv::Vec3b>(y, x)[2] = colorbuf[id + 2];
+			}
+		}
+		ImgShow("testdf asdf ", test, 960, 540);
+#endif
+
+		cq.WriteBuffer(mem_c, CL_TRUE, colorbuf);
 
 		// rgbd mapping
 		//cq.NDRangeKernel2((kn_d2p << mem_d, mem_p, depth_img_size, DK), global_size2, local_size2);
 		//cq.NDRangeKernel2((kn_p2w << mem_p, mem_w, depth_img_size, DM), global_size2, local_size2);
-		cq.NDRangeKernel2((kn_d2c << mem_w, mem_c, mem_map, depth_img_size, color_img_size, DK, CK, DM, CM), cl::size2(2048, 2048), local_size2);
-		res = cv::Mat(cv::Size(512,424), CV_8UC3, cv::Scalar(0));
-		cq.ReadBuffer(mem_map, CL_TRUE, 0, res.cols*res.rows * sizeof(cl_uchar3), res.ptr());
+		cq.NDRangeKernel2((kn_d2c << mem_p, mem_c, mem_map, depth_img_size, color_img_size, DK, CK, M), cl::size2(2048, 2048), local_size2);
+
+		std::vector<uchar> mapbuf(depth_img_size.area()*3);
+		points.resize(depth_img_size.area());
+		cq.ReadBuffer(mem_w, CL_TRUE, points);
+		cq.ReadBuffer(mem_map, CL_TRUE, mapbuf);
+
+		res = cv::Mat(cv::Size(512, 424), CV_8UC3, cv::Scalar(0, 0, 0));
+		for (int y = 0; y < res.rows; y++) {
+			for (int x = 0; x < res.cols; x++) {
+				int id = 3 * (y*res.cols + x);
+				res.at<cv::Vec3b>(y, x)[0] = mapbuf[id];     // B 
+				res.at<cv::Vec3b>(y, x)[1] = mapbuf[id + 1]; // G
+				res.at<cv::Vec3b>(y, x)[2] = mapbuf[id + 2]; // R
+				//res.at<cv::Vec4b>(y, x)[3] = 255;
+			}
+		}
 	}
 
 	void BackProjectPoints(const cv::Mat &intr, const cv::Mat &extr, const unsigned short *depth,

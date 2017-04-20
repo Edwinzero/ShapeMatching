@@ -620,15 +620,19 @@ void CLImageProcess() {
 		process.BackProjectPoints(sensors[1].cali_ir.intr.IntrVec(), sensors[1].dep_to_gl, (unsigned short*)depth1.ptr(), Kpc1.points, Kpc1.normals);
 		// link to vao
 		Kpc0.ScalePointData(50.0f);
-		Kpc1.ScalePointData(50.0f);
+		
 		CreateGLmem(Kobject0, Kpc0);
+
+
+		printf("color image type : %d = 8UC3\n", color0.type());
+
+		cv::Mat res;
+		process.DepthToRGBMapping(sensors[1].cali_ir.intr.IntrVec(), sensors[1].cali_ir.extr,
+			sensors[1].cali_rgb.intr.IntrVec(), sensors[1].cali_rgb.extr,
+			(unsigned short*)depth1.ptr(), color1, res, Kpc1.points);
+		Kpc1.ScalePointData(50.0f);
 		CreateGLmem(Kobject1, Kpc1);
-
-
-		cv::Mat res = cv::Mat(cv::Size(512, 424), CV_8UC3, cv::Scalar(0));
-		process.DepthToRGBMapping(sensors[0].cali_ir.intr.IntrVec(), sensors[0].cali_ir.extr,
-			sensors[0].cali_rgb.intr.IntrVec(), sensors[0].cali_rgb.extr,
-			(unsigned short*)depth0.ptr(), color0, res);
+		printf("res type : %d\n", res.type());
 		ImgShow("CL mapping", res, 512, 424);
 	}
 
