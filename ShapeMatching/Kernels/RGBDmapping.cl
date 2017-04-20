@@ -26,7 +26,7 @@ __kernel void depth_to_point(__global unsigned short* depth, __global float3 *po
 	uv = clamp(uv, (int2)(0), dim-1);
 	float d = convert_float_rtz(depth[y * dim.x + x]) * 0.001;
 
-#if 1
+#if 0
 	if (d < 0.025 || d > 5.0) {
 		d = 0.0;
 	}
@@ -114,20 +114,22 @@ __kernel void depth_to_color(__global float3 *points, __global uchar3 *color, __
 	float3 c_p = M.lo.lo.xyz * p.x + M.lo.hi.xyz * p.y + M.hi.lo.xyz * p.z + M.hi.hi.xyz;
 
 	float2 xy = (float2)(c_p.x / c_p.z , c_p.y / c_p.z);
-	int2 uv = (int2)(0, 0);
-	uv.x = (int)round(xy.x * Cintr.x + Cintr.z);
-	uv.y = (int)round(xy.y * Cintr.y + Cintr.w);
+	
+	int2 uv = convert_int2_rtp(xy * Cintr.lo + Cintr.hi);// + (float2)(1.5f));
 
+	uchar3 co = (uchar3)(0, 0, 0);
 	if(uv.x < 0 || uv.x >= cdim.x || uv.y < 0 || uv.y >= cdim.y){
-		mapbuf[id] = (uchar3)(0, 0, 0);
+	//if(cdim.x == 1920 && cdim.y == 1080){
+		mapbuf[id] = co;
 		return;
 	}
 	int cid = uv.y * cdim.x + uv.x;
-	uchar3 co = (uchar3)(0, 0, 0);
-	if(cid >= (cdim.x*cdim.y) || cid < 0){
-		return;
-	}
 	co = color[cid];
 	mapbuf[id] = co;
+}
+
+__kernel void feature_matching()
+{
+	/* code */
 }
 

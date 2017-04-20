@@ -54,8 +54,8 @@ public:
 		mem_n.CreateBuffer(context, CL_MEM_READ_WRITE, depth_img_size.area() * sizeof(cl_float4));
 		mem_w.CreateBuffer(context, CL_MEM_READ_WRITE, depth_img_size.area() * sizeof(cl_float4));
 
-		mem_c.CreateBuffer(context, CL_MEM_READ_WRITE, color_img_size.area() * sizeof(cl_uchar3));
-		mem_map.CreateBuffer(context, CL_MEM_READ_WRITE, depth_img_size.area() * sizeof(cl_uchar3));
+		mem_c.CreateBuffer(context, CL_MEM_READ_WRITE, color_img_size.area() * sizeof(cl_uchar4));
+		mem_map.CreateBuffer(context, CL_MEM_READ_WRITE, depth_img_size.area() * sizeof(cl_uchar4));
 	}
 
 
@@ -95,16 +95,16 @@ public:
 		MatToVec(trans.t(), M);
 
 		// color
-		//cq.WriteBuffer(mem_d, CL_TRUE, 0, depth_img_size.area() * sizeof(cl_ushort), depth);
-		std::vector<uchar> colorbuf(color.cols*color.rows*color.channels());
+		cq.WriteBuffer(mem_d, CL_TRUE, 0, depth_img_size.area() * sizeof(cl_ushort), depth);
+		std::vector<uchar> colorbuf(color.cols*color.rows*4);
 		if (color.isContinuous()) {
-			int c = color.channels();
 			for (int y = 0; y < color.rows; y++) {
 				for (int x = 0; x < color.cols; x++) {
-					int id = c*(y*color.cols + x);
+					int id = 4*(y*color.cols + x);
 					colorbuf[id] = color.at<cv::Vec3b>(y, x)[0];
 					colorbuf[id + 1] = color.at<cv::Vec3b>(y, x)[1];
 					colorbuf[id + 2] = color.at<cv::Vec3b>(y, x)[2];
+					colorbuf[id + 3] = 0;
 				}
 			}
 		}
@@ -125,11 +125,10 @@ public:
 		cq.WriteBuffer(mem_c, CL_TRUE, colorbuf);
 
 		// rgbd mapping
-		//cq.NDRangeKernel2((kn_d2p << mem_d, mem_p, depth_img_size, DK), global_size2, local_size2);
-		//cq.NDRangeKernel2((kn_p2w << mem_p, mem_w, depth_img_size, DM), global_size2, local_size2);
+		cq.NDRangeKernel2((kn_d2p << mem_d, mem_p, depth_img_size, DK), global_size2, local_size2);
 		cq.NDRangeKernel2((kn_d2c << mem_p, mem_c, mem_map, depth_img_size, color_img_size, DK, CK, M), cl::size2(2048, 2048), local_size2);
-
-		std::vector<uchar> mapbuf(depth_img_size.area()*3);
+		cq.Finish();
+		std::vector<uchar> mapbuf(depth_img_size.area()*4);
 		points.resize(depth_img_size.area());
 		cq.ReadBuffer(mem_w, CL_TRUE, points);
 		cq.ReadBuffer(mem_map, CL_TRUE, mapbuf);
@@ -137,11 +136,10 @@ public:
 		res = cv::Mat(cv::Size(512, 424), CV_8UC3, cv::Scalar(0, 0, 0));
 		for (int y = 0; y < res.rows; y++) {
 			for (int x = 0; x < res.cols; x++) {
-				int id = 3 * (y*res.cols + x);
+				int id = 4 * (y*res.cols + x);
 				res.at<cv::Vec3b>(y, x)[0] = mapbuf[id];     // B 
 				res.at<cv::Vec3b>(y, x)[1] = mapbuf[id + 1]; // G
 				res.at<cv::Vec3b>(y, x)[2] = mapbuf[id + 2]; // R
-				//res.at<cv::Vec4b>(y, x)[3] = 255;
 			}
 		}
 	}
