@@ -13,6 +13,7 @@ class PointCloud{
 public:
 	std::vector<Vector4f> points;
 	std::vector<Vector4f> normals;
+	std::vector<int>	  correspondence;
 	Matrix4f  model;
 	std::string name;
 	int hasPoint, hasNormal;
@@ -20,6 +21,7 @@ public:
 	PointCloud(){
 		points.clear();
 		normals.clear();
+		correspondence.clear();
 		model = Matrix4f::Identity();
 		name = "no name";
 		hasPoint = 0;

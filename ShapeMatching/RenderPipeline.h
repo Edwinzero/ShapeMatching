@@ -18,7 +18,7 @@
 #include <RGBDmappingCPU.h>
 
 // Feature
-#include <SIFTmatching.h>
+#include <CorrespondenceFinding.h>
 // Registration
 #include <ICP.h>
 //#include <FastGlobalRegistration.h>
@@ -770,9 +770,13 @@ void Init_Sensors(void) {
 	}
 	// CPU test
 	if(0){
-		cv::Mat res;
-		RGBD::DepthToRGBMapping(sensors[1], color1, depth1, res);
-		ImgShow("rgbd mapping", res, res.cols, res.rows);
+		//cv::Mat res;
+
+		//RGBD::UndistortColorImage(color1, res, sensors[1]);
+		//RGBD::UndistortDepthImage(depth1, res, sensors[1]);
+
+		//RGBD::DepthToRGBMapping(sensors[1], color1, depth1, res);
+		//ImgShow("rgbd mapping", res, res.cols, res.rows);
 	}
 }
 

@@ -12,17 +12,66 @@ double round(double d)
 }
 namespace RGBD {
 	// undistort image
-	cv::Point2i UndistortImage(int x, int y, cv::Mat &discoefs) {
+	// http://stackoverflow.com/questions/24698347/manually-undistorting-an-image-in-opencv
+	cv::Point2i UndistortImage(int u, int v, cv::Mat &intr, cv::Mat &discoefs) {
+		// here x indicates row, y indicates columns
+		float fx = intr.at<double>(0);
+		float fy = intr.at<double>(1);
+		float cx = intr.at<double>(2);
+		float cy = intr.at<double>(3);
+		float x = (u - cx) / fx;
+		float y = (v - cy) / fy;
+
 		float k1 = discoefs.at<double>(0);
 		float k2 = discoefs.at<double>(1);
 		float k3 = discoefs.at<double>(4);
 		float p1 = discoefs.at<double>(2);
 		float p2 = discoefs.at<double>(3);
-		int r2 = x*x + y*y;
-		int _2xy = 2 * x * y;
-		int xx = x + x*r2 * (k1 + k2*r2 + k3*r2*r2) + 2 * p1*y + p2*r2 + 2 * p2*x*x;
-		int yy = y + y*r2 * (k1 + k2*r2 + k3*r2*r2) + 2 * p2*x + p1*r2 + 2 * p1*y*y;
-		return cv::Point2i(xx, yy);
+		float r2 = x*x + y*y;
+		float _2xy = 2 * x * y;
+
+		double dx = 2 * p1*x*y + p2*(r2 + 2 * x*x);
+		double dy = p1*(r2 + 2 * y*y) + 2 * p2*x*y;
+		double scale = (1 + k1*r2 + k2*r2*r2 + k3*r2*r2*r2);
+
+		//float xx = x + x*r2 * (k1 + k2*r2 + k3*r2*r2) + 2 * p1*y + p2*r2 + 2 * p2*x*x;
+		//float yy = y + y*r2 * (k1 + k2*r2 + k3*r2*r2) + 2 * p2*x + p1*r2 + 2 * p1*y*y;
+		float xx = x * scale + dx;
+		float yy = y * scale + dy;
+
+		int cox = (int)(xx * fx + cx);
+		int coy = (int)(yy * fy + cy);
+		return cv::Point2i(cox, coy);
+	}
+
+	void UndistortColorImage(cv::Mat &color, cv::Mat &res, Sensor &sensor) {
+		res = color.clone();// cv::Mat(1080, 1920, CV_8UC3, cv::Scalar(0));
+		for (int y = 0; y < res.rows; y++) {
+			for (int x = 0; x < res.cols; x++) {
+				cv::Point2i co = UndistortImage(x, y, sensor.cali_rgb.intr.IntrVec(), sensor.cali_rgb.intr.distCoeffs);
+				//printf("cor x: %d, y: %d \n", co.x, co.y);
+				if (co.x < 0 || co.x >= 1920 || co.y < 0 || co.y >= 1080) {
+					continue;
+				}
+				res.at<cv::Vec3b>(co.y, co.x) = color.at<cv::Vec3b>(y, x);
+			}
+		}
+		ImgShow("corrected rgb", res, 960, 540);
+	}
+
+	void UndistortDepthImage(cv::Mat &depth, cv::Mat &res, Sensor &sensor) {
+		res = cv::Mat(424, 512, CV_16UC1, cv::Scalar(0));
+		for (int y = 0; y < res.rows; y++) {
+			for (int x = 0; x < res.cols; x++) {
+				cv::Point2i co = UndistortImage(x, y, sensor.cali_ir.intr.IntrVec(), sensor.cali_ir.intr.distCoeffs);
+				//printf("cor x: %d, y: %d \n", co.x, co.y);
+				if (co.x < 0 || co.x >= 512 || co.y < 0 || co.y >= 424) {
+					continue;
+				}
+				res.at<unsigned short>(co.y, co.x) = depth.at<unsigned short>(y, x);
+			}
+		}
+		ImgShow("corrected depth", res, 512, 424);
 	}
 
 	// img * intr (transfer image to 3D points cam space)
@@ -35,7 +84,7 @@ namespace RGBD {
 		float cy = intr.at<double>(3) * scalar;
 
 		cv::Point2i correct_pos(0, 0);
-		correct_pos = UndistortImage(x, y, discoefs);
+		correct_pos = UndistortImage(x, y, intr, discoefs);
 
 		cv::Point3f res;
 		res.x = (float)((correct_pos.x - cx) * d / fx);
@@ -58,6 +107,7 @@ namespace RGBD {
 		return res;
 	}
 
+
 	// transfer image from cam space to sensor space then to other cam space for the same Kinect
 	cv::Point2i PointToImg(const cv::Mat &trans, cv::Mat &discoefs, cv::Mat &rgb_intr, cv::Point3f &pt) {
 		cv::Point3f color_pt = trans * pt;
@@ -74,8 +124,6 @@ namespace RGBD {
 	void DepthToRGBMapping(Sensor &sensor, cv::Mat &rgb, cv::Mat &dep, cv::Mat &res) {
 		res = cv::Mat(dep.size(), CV_8UC3, cv::Scalar(0));
 		cv::Mat trans = sensor.cali_rgb.extr * sensor.cali_ir.extr.inv();
-		std::cout << trans << std::endl;
-		printf("dkjfklasjdkfaksdjklfjkasdkfl \n");
 		//unsigned short *row_ptr;
 		for (int y = 0; y < res.rows; y++) {
 			//row_ptr = dep.ptr<unsigned short>(y);

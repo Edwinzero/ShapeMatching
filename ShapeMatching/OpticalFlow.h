@@ -20,6 +20,7 @@ public:
 // https://github.com/sahakorn/Python-optical-flow-tracking/blob/master/optical_flow.py
 // http://vision.middlebury.edu/flow/floweval-ijcv2011.pdf
 // http://courses.cs.washington.edu/courses/cse576/book/ch11.pdf ***** important
+// http://study.marearts.com/2014/07/opencv-study-opticalflow-gpu-feature.html
 void SampleOpticalFlow() {
 
 }

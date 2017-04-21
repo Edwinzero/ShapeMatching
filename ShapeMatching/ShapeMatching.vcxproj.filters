@@ -155,6 +155,9 @@
     <ClInclude Include="ICP.h">
       <Filter>Header Files\Reigstration</Filter>
     </ClInclude>
+    <ClInclude Include="CorrespondenceFinding.h">
+      <Filter>Header Files\Corresponedence</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="IMGUI\imgui.ini">

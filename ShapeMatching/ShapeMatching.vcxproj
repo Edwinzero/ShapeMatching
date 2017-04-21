@@ -134,6 +134,7 @@
     <ClInclude Include="AABB.h" />
     <ClInclude Include="camera.h" />
     <ClInclude Include="CLutils.h" />
+    <ClInclude Include="CorrespondenceFinding.h" />
     <ClInclude Include="cv_op.h" />
     <ClInclude Include="Eigen_op.h" />
     <ClInclude Include="FastGlobalRegistration.h" />
