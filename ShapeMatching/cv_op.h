@@ -28,6 +28,12 @@ cv::Point3_<T> normalize(const cv::Point3_<T> &a) {
 }
 
 template< class T >
+T magnitude(const cv::Point3_<T> &a) {
+	float mag = sqrtf(a.x*a.x + a.y*a.y + a.z*a.z);
+	return mag;
+}
+
+template< class T >
 cv::Point3_<T> operator*( const cv::Mat &m, const cv::Point3_<T> &v ) {
 	cv::Point3_<T> t;
 	t.x = m.at<double>( 0, 0 ) * v.x + m.at<double>( 0, 1 ) * v.y + m.at<double>( 0, 2 ) * v.z;
@@ -93,6 +99,27 @@ cv::Mat TranslateRotate( const cv::Point3_<T> &t, const cv::Mat &r ) {
 	m.at<double>( 3, 3 ) = 1;
 
 	return m;
+}
+
+cv::Mat ExtractRotate(const cv::Mat &m) {
+	cv::Mat r = cv::Mat_<double>(4, 4);
+
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 3; j++) {
+			r.at<double>(i, j) = m.at<double>(i, j);
+		}
+	}
+
+	r.at<double>(0, 3) = 0;
+	r.at<double>(1, 3) = 0;
+	r.at<double>(2, 3) = 0;
+
+	r.at<double>(3, 0) = 0;
+	r.at<double>(3, 1) = 0;
+	r.at<double>(3, 2) = 0;
+	r.at<double>(3, 3) = 1;
+
+	return r;
 }
 
 template< class T >

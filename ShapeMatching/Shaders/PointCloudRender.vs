@@ -11,7 +11,7 @@ out vec3 out_normal;
 out vec3 in_color;
 
 void main(){
-    out_normal = (transpose(inverse(model)) * vec4(normal, 1.0)).xyz;
+    out_normal = normalize((transpose(inverse(model)) * vec4(normal, 1.0)).xyz);
     vec4 model_pos = model * vec4(pos, 1.0);
     vec4 view_pos = view * model_pos; 
     in_color = color; 

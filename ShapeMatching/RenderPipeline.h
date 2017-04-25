@@ -42,6 +42,7 @@ std::vector<Sensor> sensors;
 PointCloud pc0, pc1;
 GLmem object0, object1;
 //FastGlobalReg fgr;
+std::vector<std::pair<int, int>> corres;
 bool doFGR = false;
 bool doICP = false;
 bool doReset = false;
@@ -609,11 +610,6 @@ void MouseMoveCallback(int x, int y)
 //		Image Process methods
 //=========================================================================
 void CLImageProcess() {
-	// feature matching
-	{
-
-	}
-
 	// rgbd mapping
 	{
 		cv::Mat res0;
@@ -632,14 +628,24 @@ void CLImageProcess() {
 	// backproject
 	{
 		process.BackProjectPoints(sensors[0].cali_ir.intr.IntrVec(), sensors[0].dep_to_gl, (unsigned short*)depth0.ptr(), Kpc0.points, Kpc0.normals);
-		Kpc0.ScalePointData(50.0f);	
+		Kpc0.ScalePointData(50.0f);
 		CreateGLmem(Kobject0, Kpc0);
-		
-		process.BackProjectPoints(sensors[1].cali_ir.intr.IntrVec(), sensors[1].dep_to_gl, (unsigned short*)depth1.ptr(), Kpc1.points, Kpc1.normals);	
+
+		process.BackProjectPoints(sensors[1].cali_ir.intr.IntrVec(), sensors[1].dep_to_gl, (unsigned short*)depth1.ptr(), Kpc1.points, Kpc1.normals);
 		Kpc1.ScalePointData(50.0f);
-		CreateGLmem(Kobject1, Kpc1);		
+		CreateGLmem(Kobject1, Kpc1);
 	}
 
+	// feature matching
+	{
+
+	}
+
+	// correspondence finding
+	{
+		// projective data
+		CORRES::ProjectiveCorresondence(Kpc0.points, Kpc0.normals, Kpc1.points, Kpc1.normals, corres, sensors[0], sensors[1]);
+	}
 }
 
 //=========================================================================

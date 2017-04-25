@@ -170,6 +170,52 @@ void PointToPoint_ICP(std::vector<Eigen::Vector4f> &src4, std::vector<Eigen::Vec
 	err = sqrtf(error);
 }
 
+void PointToPoint_ICP(std::vector<Eigen::Vector4f> &src4, std::vector<Eigen::Vector4f> &tar4, std::vector<std::pair<int, int>> &corres,
+	Eigen::Matrix3f &rotation, Eigen::Vector3f &translation, float &err) {
+	//1. compute weighted average
+	Eigen::Vector3f m_src = mean(src4);
+	Eigen::Vector3f m_tar = mean(tar4);
+
+	//2. compute centered vec p = pave
+	//3. compute S = Y *W *X = Y*X
+	// EIGEN VARIABLE MUST BE INITIALIZED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11
+	Eigen::Matrix3f S = Eigen::Matrix3f::Zero();
+	for (int i = 0; i < corres.size(); i++) {
+		int f = corres[i].first;
+		int s = corres[i].second;
+		Eigen::Vector3f src = Eigen::Vector3f(src4[f](0), src4[f](1), src4[f](2));
+		Eigen::Vector3f tar = Eigen::Vector3f(tar4[s](0), tar4[s](1), tar4[s](2));
+		Eigen::Vector3f p = src - m_src;
+		Eigen::Vector3f q = tar - m_tar;
+		S += p * q.transpose();
+	}
+
+	//4. Using SVD to get U * sigma * V
+	Eigen::JacobiSVD<Eigen::MatrixXf> svd(S, Eigen::ComputeThinU | Eigen::ComputeThinV);
+
+	//5. Compute R = U * I' * V
+	Eigen::Matrix3f I = Eigen::Matrix3f::Identity();
+	float neg_detuv = (svd.matrixV()*svd.matrixU().transpose()).determinant();
+	I(2, 2) = neg_detuv;
+	rotation = svd.matrixV() * I * svd.matrixU().transpose();
+
+	//6. Compute t = m_tar - R * m_src
+	translation = m_tar - rotation * m_src;
+
+	//7. evaluate || q - (Rp + t)||^2
+	float error = 0.0f;
+	for (int i = 0; i < corres.size(); i++) {
+		int f = corres[i].first;
+		int s = corres[i].second;
+		Eigen::Vector3f src = Eigen::Vector3f(src4[f](0), src4[f](1), src4[f](2));
+		Eigen::Vector3f tar = Eigen::Vector3f(tar4[s](0), tar4[s](1), tar4[s](2));
+		Eigen::Vector3f newp = tar - rotation*src - translation;
+		error += newp.dot(newp);
+	}
+	error /= (float)(src4.size());
+	err = sqrtf(error);
+}
+
 
 
 void PointToPoint_iterICP(std::vector<Eigen::Vector3f> &src, std::vector<Eigen::Vector3f> &tar,
@@ -289,5 +335,8 @@ void PointToPlane_ICP(std::vector<Eigen::Vector4f> &src4, std::vector<Eigen::Vec
 	rotation = rot * rotation;
 	translation = rot * translation + t;
 }
+
+
+
 
 #endif
