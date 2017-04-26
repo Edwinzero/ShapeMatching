@@ -178,5 +178,40 @@ public:
 		cq.ReadBuffer(mem_n, CL_TRUE, normals);
 	}
 
+	void BackProjectPointsShang(const cv::Mat &intr, const cv::Mat &extr, const unsigned short *depth,
+		std::vector<Eigen::Vector4f> &points, std::vector<Eigen::Vector4f> &normals) {
+		// K
+		std::vector<float> K;
+		MatToVec(intr, K);
+
+		// M
+		std::vector<float> M;
+
+#if 1
+		double rep[] = {
+			0, 1, 0, 0,
+			-1, 0, 0, 0.69,
+			0, 0, 1, 0,
+			0, 0, 0, 1 };
+		//MatToVec((cv::Mat(4, 4, CV_64F, rep) * extr).t(), M);
+		MatToVec((cv::Mat(4, 4, CV_64F, rep)).t(), M);
+#else
+		// transpose extr will make 0001 to column 3
+		MatToVec(extr.t(), M);
+#endif
+		// depth
+		cq.WriteBuffer(mem_d, CL_TRUE, 0, depth_img_size.area() * sizeof(cl_ushort), depth);
+
+		// backprojection
+		cq.NDRangeKernel2((kn_d2p << mem_d, mem_p, depth_img_size, K), global_size2, local_size2);
+		cq.NDRangeKernel2((kn_p2w << mem_p, mem_w, depth_img_size, M), global_size2, local_size2);
+		cq.NDRangeKernel2((kn_p2n << mem_p, mem_n, depth_img_size), global_size2, local_size2);
+
+		points.resize(depth_img_size.area());
+		normals.resize(depth_img_size.area());
+		cq.ReadBuffer(mem_w, CL_TRUE, points);
+		cq.ReadBuffer(mem_n, CL_TRUE, normals);
+	}
+
 };
 #endif // !_RGBD_MAPPING_CL_H

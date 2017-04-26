@@ -16,6 +16,7 @@
 #include <RGBDmapping.h>
 #include <plyloader.h>
 #include <RGBDmappingCPU.h>
+#include <GaussianNoise.h>
 
 // Feature
 #include <CorrespondenceFinding.h>
@@ -56,6 +57,12 @@ PointCloud Kpc0, Kpc1;
 GLmem Kobject0, Kobject1;
 cv::Mat depth0, depth1;
 cv::Mat color0, color1;
+// RGBD mapping + backprojection
+PointCloud Kpc_0, Kpc_1;
+GLmem Kobject_0, Kobject_1;
+cv::Mat depth_0, depth_1;
+cv::Mat color_0, color_1;
+Sensor bfsensors[2];
 
 // Feature detection
 ImageTex colorTex;
@@ -178,7 +185,50 @@ void DrawScene3D() {
 		glPopMatrix();
 
 		// Point cloud data
-		if (1) {
+		if (1) {  // shang
+			glEnable(GL_PROGRAM_POINT_SIZE);
+			glMatrixMode(GL_MODELVIEW);
+			glPushMatrix();
+			if (Kpc_0.hasPoint) {
+				glUseProgram(GLPointRenderProgram);
+				Eigen::Matrix4f proj = Eigen::Matrix4f::Identity();
+				Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
+				glGetFloatv(GL_PROJECTION_MATRIX, proj.data());
+				glGetFloatv(GL_MODELVIEW_MATRIX, view.data());
+				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "proj"), 1, GL_FALSE, proj.data());
+				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "view"), 1, GL_FALSE, view.data());
+				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "model"), 1, GL_FALSE, Kpc_0.model.data());
+				glUniform3fv(glGetUniformLocation(GLPointRenderProgram, "color"), 1, Eigen::Vector3f(1.0f, 0.0f, 0.0f).data());
+				glBindVertexArray(Kobject_0.vao);
+				glDrawArrays(GL_POINTS, 0, Kobject_0.m_numVerts);
+				glBindVertexArray(0);
+
+				glUseProgram(0);
+			}
+			glMatrixMode(GL_MODELVIEW);
+			glPopMatrix();
+			glMatrixMode(GL_MODELVIEW);
+			glPushMatrix();
+			if (Kpc_1.hasPoint) {
+				glUseProgram(GLPointRenderProgram);
+				Eigen::Matrix4f proj = Eigen::Matrix4f::Identity();
+				Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
+				glGetFloatv(GL_PROJECTION_MATRIX, proj.data());
+				glGetFloatv(GL_MODELVIEW_MATRIX, view.data());
+				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "proj"), 1, GL_FALSE, proj.data());
+				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "view"), 1, GL_FALSE, view.data());
+				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "model"), 1, GL_FALSE, Kpc_1.model.data());
+				glUniform3fv(glGetUniformLocation(GLPointRenderProgram, "color"), 1, Eigen::Vector3f(0.0f, 1.0f, 0.0f).data());
+				glBindVertexArray(Kobject_1.vao);
+				glDrawArrays(GL_POINTS, 0, Kobject_1.m_numVerts);
+				glBindVertexArray(0);
+
+				glUseProgram(0);
+			}
+			glMatrixMode(GL_MODELVIEW);
+			glPopMatrix();
+		}
+		if (0) {  // moca
 			glEnable(GL_PROGRAM_POINT_SIZE);
 			glMatrixMode(GL_MODELVIEW);
 			glPushMatrix();
@@ -611,7 +661,7 @@ void MouseMoveCallback(int x, int y)
 //=========================================================================
 void CLImageProcess() {
 	// rgbd mapping
-	{
+	if(1){
 		cv::Mat res0;
 		process.DepthToRGBMapping(sensors[0].cali_ir.intr.IntrVec(), sensors[0].cali_ir.extr,
 			sensors[0].cali_rgb.intr.IntrVec(), sensors[0].cali_rgb.extr,
@@ -624,9 +674,22 @@ void CLImageProcess() {
 			(unsigned short*)depth1.ptr(), color1, res1, Kpc1.points);
 		ImgShow("CL RGBDmapping K1", res1, 512, 424);
 	}
+	if(1){// shang
+		cv::Mat res0;
+		process.DepthToRGBMapping(bfsensors[0].cali_ir.intr.IntrVec(), bfsensors[0].cali_ir.extr,
+			bfsensors[0].cali_rgb.intr.IntrVec(), bfsensors[0].cali_rgb.extr,
+			(unsigned short*)depth_0.ptr(), color_0, res0, Kpc_0.points);
+		ImgShow("CL RGBDmapping K0", res0, 512, 424);
+
+		cv::Mat res1;
+		process.DepthToRGBMapping(bfsensors[1].cali_ir.intr.IntrVec(), bfsensors[1].cali_ir.extr,
+			bfsensors[1].cali_rgb.intr.IntrVec(), bfsensors[1].cali_rgb.extr,
+			(unsigned short*)depth_1.ptr(), color_1, res1, Kpc_1.points);
+		ImgShow("CL RGBDmapping K1", res1, 512, 424);
+	}
 
 	// backproject
-	{
+	if(1){
 		process.BackProjectPoints(sensors[0].cali_ir.intr.IntrVec(), sensors[0].dep_to_gl, (unsigned short*)depth0.ptr(), Kpc0.points, Kpc0.normals);
 		Kpc0.ScalePointData(50.0f);
 		CreateGLmem(Kobject0, Kpc0);
@@ -634,6 +697,15 @@ void CLImageProcess() {
 		process.BackProjectPoints(sensors[1].cali_ir.intr.IntrVec(), sensors[1].dep_to_gl, (unsigned short*)depth1.ptr(), Kpc1.points, Kpc1.normals);
 		Kpc1.ScalePointData(50.0f);
 		CreateGLmem(Kobject1, Kpc1);
+	}
+	if(1){//shang
+		process.BackProjectPointsShang(bfsensors[0].cali_ir.intr.IntrVec(), bfsensors[0].cali_ir.extr, (unsigned short*)depth_0.ptr(), Kpc_0.points, Kpc_0.normals);
+		Kpc_0.ScalePointData(50.0f);
+		CreateGLmem(Kobject_0, Kpc_0);
+
+		process.BackProjectPointsShang(bfsensors[1].cali_ir.intr.IntrVec(), bfsensors[1].cali_ir.extr, (unsigned short*)depth_1.ptr(), Kpc_1.points, Kpc_1.normals);
+		Kpc_1.ScalePointData(50.0f);
+		CreateGLmem(Kobject_1, Kpc_1);
 	}
 
 	// feature matching
@@ -644,7 +716,7 @@ void CLImageProcess() {
 	// correspondence finding
 	{
 		// projective data
-		CORRES::ProjectiveCorresondence(Kpc0.points, Kpc0.normals, Kpc1.points, Kpc1.normals, corres, sensors[0], sensors[1]);
+		//CORRES::ProjectiveCorresondence(Kpc0.points, Kpc0.normals, Kpc1.points, Kpc1.normals, corres, sensors[0], sensors[1]);
 	}
 }
 
@@ -741,6 +813,10 @@ void Init_Sensors(void) {
 		// load dep to global params
 		LoadGlobalIRMatrix(sensors, "newSegData930/sensor-ir.mat");
 		LoadGlobalRGBMatrix(sensors, "newSegData930/sensor-rgb.mat");
+
+
+		bfsensors[0].LoadSensorParameters("Data/DEPTH/IRIR_extr_cali_0.txt", "Data/DEPTH/RGBRGB_extr_cali_0.txt");
+		bfsensors[1].LoadSensorParameters("Data/DEPTH/IRIR_extr_cali_1.txt", "Data/DEPTH/RGBRGB_extr_cali_1.txt");
 	}
 
 	// Load images
@@ -758,7 +834,7 @@ void Init_Sensors(void) {
 	}
 
 	// images for RGBD process
-	{
+	if(1){
 		char filepath[64];
 		sprintf(filepath, "Data/K0/Pose_%d.jpeg", 666);
 		color0 = cv::imread(filepath, CV_LOAD_IMAGE_COLOR);
@@ -773,6 +849,29 @@ void Init_Sensors(void) {
 
 		sprintf(filepath, "Data/K1/Pose_%d.png", 666);
 		LoadFrame(depth1, filepath);
+	}
+	{ // sHANG
+		char filepath[64];
+		sprintf(filepath, "Data/DEPTH/K0/CPose%d_0.png", 1);
+		color_0 = cv::imread(filepath, CV_LOAD_IMAGE_COLOR);
+		//cv::flip(color_0, color_0, 1);
+
+		sprintf(filepath, "Data/DEPTH/K1/CPose%d_0.png", 1);
+		color_1 = cv::imread(filepath, CV_LOAD_IMAGE_COLOR);
+		//cv::flip(color_1, color_1, 1);
+
+		sprintf(filepath, "Data/DEPTH/K0/Pose%d_0.png", 1);
+		depth_0 = cv::imread(filepath, CV_LOAD_IMAGE_ANYDEPTH);
+
+		sprintf(filepath, "Data/DEPTH/K1/Pose%d_0.png", 1);
+		depth_1 = cv::imread(filepath, CV_LOAD_IMAGE_ANYDEPTH);
+	}
+	// bilaterial filter for depth image
+	if(0){
+		//cv::Mat res = FILTER::BilateralFilter(depth1, 9, 1.5,4.5);
+		//ImgShow("bf depth1", depth1, 512, 424);
+		//cv::imwrite("kjsdk1.png", depth1);
+		//cv::imwrite("kjsdk.png", res);
 	}
 	// CPU test
 	if(0){

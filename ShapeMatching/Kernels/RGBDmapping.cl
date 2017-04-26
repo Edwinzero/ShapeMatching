@@ -115,7 +115,7 @@ __kernel void depth_to_color(__global float3 *points, __global uchar3 *color, __
 
 	float2 xy = (float2)(c_p.x / c_p.z , c_p.y / c_p.z);
 	
-	int2 uv = convert_int2_rtp(xy * Cintr.lo + Cintr.hi);// + (float2)(1.5f));
+	int2 uv = convert_int2_rtp(xy * Cintr.lo + Cintr.hi - (float2)(0.5f, 0.5f));
 
 	uchar3 co = (uchar3)(0, 0, 0);
 	if(uv.x < 0 || uv.x >= cdim.x || uv.y < 0 || uv.y >= cdim.y){

@@ -200,8 +200,8 @@ void ExtractSURFpointsFLANN(cv::Mat &src, cv::Mat &dst, vector<cv::Point2f> &cor
 
 	int matchsize = good_matches.size();
 	for (int i = 0; i < matchsize; i++) {
-		int srcid = matches[i].trainIdx;
-		int dstid = matches[i].queryIdx;
+		int srcid = good_matches[i].trainIdx;
+		int dstid = good_matches[i].queryIdx;
 		if (srcid >= kp_src.size() || dstid >= kp_dst.size()) {
 			continue;
 		}
@@ -265,8 +265,8 @@ void ExtractSIFTpointsRANSACFLANN(cv::Mat &src, cv::Mat &dst, vector<cv::Point2f
 
 	int matchsize = good_matches.size();
 	for (int i = 0; i < matchsize; i++) {
-		int srcid = matches[i].trainIdx;
-		int dstid = matches[i].queryIdx;
+		int srcid = good_matches[i].trainIdx;
+		int dstid = good_matches[i].queryIdx;
 		if (srcid >= kp_src.size() || dstid >= kp_dst.size()) {
 			continue;
 		}
@@ -360,8 +360,8 @@ void ExtractSURFpointsRANSACFLANN(cv::Mat &src, cv::Mat &dst, vector<cv::Point2f
 
 	int matchsize = good_matches.size();
 	for (int i = 0; i < matchsize; i++) {
-		int srcid = matches[i].trainIdx;
-		int dstid = matches[i].queryIdx;
+		int srcid = good_matches[i].trainIdx;
+		int dstid = good_matches[i].queryIdx;
 		if (srcid >= kp_src.size() || dstid >= kp_dst.size()) {
 			continue;
 		}
@@ -414,9 +414,11 @@ void ExtractSURFpointsRANSACFLANN(cv::Mat &src, cv::Mat &dst, vector<cv::Point2f
 void Sample_ExtractSIFT() {
 	//cv::Mat src = cv::imread("Data/img_color_1_object1.jpg", cv::IMREAD_GRAYSCALE);
 	//cv::Mat dst = cv::imread("Data/img_color_1.jpg", cv::IMREAD_GRAYSCALE);
-	cv::Mat src = cv::imread("Data/K0/Pose_666.jpeg", cv::IMREAD_GRAYSCALE);
+	//cv::Mat src = cv::imread("Data/K0/Pose_666.jpeg", cv::IMREAD_GRAYSCALE);
+	cv::Mat src = cv::imread("Data/DEPTH/K0/CPose1_0.png", cv::IMREAD_GRAYSCALE);
 	cv::pyrDown(src, src);
-	cv::Mat dst = cv::imread("Data/K1/Pose_666.jpeg", cv::IMREAD_GRAYSCALE);
+	//cv::Mat dst = cv::imread("Data/K1/Pose_666.jpeg", cv::IMREAD_GRAYSCALE);
+	cv::Mat dst = cv::imread("Data/DEPTH/K1/CPose1_0.png", cv::IMREAD_GRAYSCALE);
 	cv::pyrDown(dst, dst);
 	std::vector<cv::Point2f> corres_src, corres_dst;
 	ExtractSIFTpoints(src, dst, corres_src, corres_dst, 400);
@@ -425,5 +427,6 @@ void Sample_ExtractSIFT() {
 	ExtractSURFpoints(src, dst, corres_src, corres_dst, 400);
 	ExtractSURFpointsFLANN(src, dst, corres_src, corres_dst, 400);
 	ExtractSURFpointsRANSACFLANN(src, dst, corres_src, corres_dst, 400);
+	cv::waitKey(0);
 }
 #endif // !_SIFT_MATCHING_H
