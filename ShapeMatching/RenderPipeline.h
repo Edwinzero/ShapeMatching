@@ -185,7 +185,7 @@ void DrawScene3D() {
 		glPopMatrix();
 
 		// Point cloud data
-		if (1) {  // shang
+		if (0) {  // shang
 			glEnable(GL_PROGRAM_POINT_SIZE);
 			glMatrixMode(GL_MODELVIEW);
 			glPushMatrix();
@@ -228,7 +228,7 @@ void DrawScene3D() {
 			glMatrixMode(GL_MODELVIEW);
 			glPopMatrix();
 		}
-		if (0) {  // moca
+		if (1) {  // moca
 			glEnable(GL_PROGRAM_POINT_SIZE);
 			glMatrixMode(GL_MODELVIEW);
 			glPushMatrix();
@@ -661,20 +661,20 @@ void MouseMoveCallback(int x, int y)
 //=========================================================================
 void CLImageProcess() {
 	// rgbd mapping
+	cv::Mat res0;
+	cv::Mat res1;
 	if(1){
-		cv::Mat res0;
 		process.DepthToRGBMapping(sensors[0].cali_ir.intr.IntrVec(), sensors[0].cali_ir.extr,
 			sensors[0].cali_rgb.intr.IntrVec(), sensors[0].cali_rgb.extr,
 			(unsigned short*)depth0.ptr(), color0, res0, Kpc0.points);
 		ImgShow("CL RGBDmapping K0", res0, 512, 424);
 
-		cv::Mat res1;
 		process.DepthToRGBMapping(sensors[1].cali_ir.intr.IntrVec(), sensors[1].cali_ir.extr,
 			sensors[1].cali_rgb.intr.IntrVec(), sensors[1].cali_rgb.extr,
 			(unsigned short*)depth1.ptr(), color1, res1, Kpc1.points);
 		ImgShow("CL RGBDmapping K1", res1, 512, 424);
 	}
-	if(1){// shang
+	if(0){// shang
 		cv::Mat res0;
 		process.DepthToRGBMapping(bfsensors[0].cali_ir.intr.IntrVec(), bfsensors[0].cali_ir.extr,
 			bfsensors[0].cali_rgb.intr.IntrVec(), bfsensors[0].cali_rgb.extr,
@@ -698,7 +698,7 @@ void CLImageProcess() {
 		Kpc1.ScalePointData(50.0f);
 		CreateGLmem(Kobject1, Kpc1);
 	}
-	if(1){//shang
+	if(0){//shang
 		process.BackProjectPointsShang(bfsensors[0].cali_ir.intr.IntrVec(), bfsensors[0].cali_ir.extr, (unsigned short*)depth_0.ptr(), Kpc_0.points, Kpc_0.normals);
 		Kpc_0.ScalePointData(50.0f);
 		CreateGLmem(Kobject_0, Kpc_0);
@@ -710,7 +710,10 @@ void CLImageProcess() {
 
 	// feature matching
 	{
-
+		std::vector<cv::Point2f> corres_src, corres_dst;
+		ExtractSIFTpointsFLANN(res0, res1, corres_src, corres_dst, 400);
+		ExtractSIFTpointsRANSACFLANN(res0, res1, corres_src, corres_dst, 400);
+		cv::waitKey(0);
 	}
 
 	// correspondence finding
@@ -850,7 +853,7 @@ void Init_Sensors(void) {
 		sprintf(filepath, "Data/K1/Pose_%d.png", 666);
 		LoadFrame(depth1, filepath);
 	}
-	{ // sHANG
+	if(0){ // sHANG
 		char filepath[64];
 		sprintf(filepath, "Data/DEPTH/K0/CPose%d_0.png", 1);
 		color_0 = cv::imread(filepath, CV_LOAD_IMAGE_COLOR);

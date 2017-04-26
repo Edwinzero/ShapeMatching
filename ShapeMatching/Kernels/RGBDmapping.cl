@@ -26,8 +26,8 @@ __kernel void depth_to_point(__global unsigned short* depth, __global float3 *po
 	uv = clamp(uv, (int2)(0), dim-1);
 	float d = convert_float_rtz(depth[y * dim.x + x]) * 0.001;
 
-#if 0
-	if (d < 0.025 || d > 5.0) {
+#if 1
+	if (d < 0.050 || d > 5.0) {
 		d = 0.0;
 	}
 
@@ -115,7 +115,7 @@ __kernel void depth_to_color(__global float3 *points, __global uchar3 *color, __
 
 	float2 xy = (float2)(c_p.x / c_p.z , c_p.y / c_p.z);
 	
-	int2 uv = convert_int2_rtp(xy * Cintr.lo + Cintr.hi - (float2)(0.5f, 0.5f));
+	int2 uv = convert_int2_rtp(xy * Cintr.lo + Cintr.hi - (float2)(5.0f, 0.0f));
 
 	uchar3 co = (uchar3)(0, 0, 0);
 	if(uv.x < 0 || uv.x >= cdim.x || uv.y < 0 || uv.y >= cdim.y){

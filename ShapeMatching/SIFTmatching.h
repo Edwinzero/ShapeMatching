@@ -11,7 +11,7 @@ void ExtractSIFTpoints(cv::Mat &src, cv::Mat &dst, vector<cv::Point2f> &corres_s
 	}
 
 	// detect keypoint using sift detector
-	cv::SiftFeatureDetector detector;
+	cv::SiftFeatureDetector detector(minHessian);
 	std::vector<cv::KeyPoint> kp_src, kp_dst;
 	detector.detect(src, kp_src);
 	detector.detect(dst, kp_dst);
@@ -53,7 +53,7 @@ void ExtractSURFpoints(cv::Mat &src, cv::Mat &dst, vector<cv::Point2f> &corres_s
 	}
 
 	// detect keypoint using sift detector
-	cv::SurfFeatureDetector detector(400);
+	cv::SurfFeatureDetector detector(minHessian);
 	std::vector<cv::KeyPoint> kp_src, kp_dst;
 	detector.detect(src, kp_src);
 	detector.detect(dst, kp_dst);
@@ -95,7 +95,7 @@ void ExtractSIFTpointsFLANN(cv::Mat &src, cv::Mat &dst, vector<cv::Point2f> &cor
 	}
 
 	// detect keypoint using sift detector
-	cv::SiftFeatureDetector detector;
+	cv::SiftFeatureDetector detector(minHessian);
 	std::vector<cv::KeyPoint> kp_src, kp_dst;
 	detector.detect(src, kp_src);
 	detector.detect(dst, kp_dst);
@@ -160,7 +160,7 @@ void ExtractSURFpointsFLANN(cv::Mat &src, cv::Mat &dst, vector<cv::Point2f> &cor
 	}
 
 	// detect keypoint using sift detector
-	cv::SurfFeatureDetector detector(400);
+	cv::SurfFeatureDetector detector(minHessian);
 	std::vector<cv::KeyPoint> kp_src, kp_dst;
 	detector.detect(src, kp_src);
 	detector.detect(dst, kp_dst);
@@ -225,7 +225,7 @@ void ExtractSIFTpointsRANSACFLANN(cv::Mat &src, cv::Mat &dst, vector<cv::Point2f
 	}
 
 	// detect keypoint using sift detector
-	cv::SiftFeatureDetector detector;
+	cv::SiftFeatureDetector detector(minHessian);
 	std::vector<cv::KeyPoint> kp_src, kp_dst;
 	detector.detect(src, kp_src);
 	detector.detect(dst, kp_dst);
@@ -300,13 +300,10 @@ void ExtractSIFTpointsRANSACFLANN(cv::Mat &src, cv::Mat &dst, vector<cv::Point2f
 	perspectiveTransform(obj_corners, scene_corners, H);
 
 	//-- Draw lines between the corners (the mapped object in the scene - image_2 )
-	cv::line(img_matches, scene_corners[0] + cv::Point2f(src.cols, 0), scene_corners[1] + cv::Point2f(src.cols, 0), cv::Scalar(0, 255, 0), 4);
-	cv::line(img_matches, scene_corners[1] + cv::Point2f(src.cols, 0), scene_corners[2] + cv::Point2f(src.cols, 0), cv::Scalar(0, 255, 0), 4);
-	cv::line(img_matches, scene_corners[2] + cv::Point2f(src.cols, 0), scene_corners[3] + cv::Point2f(src.cols, 0), cv::Scalar(0, 255, 0), 4);
-	cv::line(img_matches, scene_corners[3] + cv::Point2f(src.cols, 0), scene_corners[0] + cv::Point2f(src.cols, 0), cv::Scalar(0, 255, 0), 4);
-
-
-
+	//cv::line(img_matches, scene_corners[0] + cv::Point2f(src.cols, 0), scene_corners[1] + cv::Point2f(src.cols, 0), cv::Scalar(0, 255, 0), 4);
+	//cv::line(img_matches, scene_corners[1] + cv::Point2f(src.cols, 0), scene_corners[2] + cv::Point2f(src.cols, 0), cv::Scalar(0, 255, 0), 4);
+	//cv::line(img_matches, scene_corners[2] + cv::Point2f(src.cols, 0), scene_corners[3] + cv::Point2f(src.cols, 0), cv::Scalar(0, 255, 0), 4);
+	//cv::line(img_matches, scene_corners[3] + cv::Point2f(src.cols, 0), scene_corners[0] + cv::Point2f(src.cols, 0), cv::Scalar(0, 255, 0), 4);
 
 	//-- Show detected matches
 	cv::imshow("SIFT RANSAC FLANN Matches", img_matches);
@@ -320,7 +317,7 @@ void ExtractSURFpointsRANSACFLANN(cv::Mat &src, cv::Mat &dst, vector<cv::Point2f
 	}
 
 	// detect keypoint using sift detector
-	cv::SurfFeatureDetector detector(400);
+	cv::SurfFeatureDetector detector(minHessian);
 	std::vector<cv::KeyPoint> kp_src, kp_dst;
 	detector.detect(src, kp_src);
 	detector.detect(dst, kp_dst);
@@ -396,37 +393,34 @@ void ExtractSURFpointsRANSACFLANN(cv::Mat &src, cv::Mat &dst, vector<cv::Point2f
 	perspectiveTransform(obj_corners, scene_corners, H);
 
 	//-- Draw lines between the corners (the mapped object in the scene - image_2 )
-	cv::line(img_matches, scene_corners[0] + cv::Point2f(src.cols, 0), scene_corners[1] + cv::Point2f(src.cols, 0), cv::Scalar(0, 255, 0), 4);
-	cv::line(img_matches, scene_corners[1] + cv::Point2f(src.cols, 0), scene_corners[2] + cv::Point2f(src.cols, 0), cv::Scalar(0, 255, 0), 4);
-	cv::line(img_matches, scene_corners[2] + cv::Point2f(src.cols, 0), scene_corners[3] + cv::Point2f(src.cols, 0), cv::Scalar(0, 255, 0), 4);
-	cv::line(img_matches, scene_corners[3] + cv::Point2f(src.cols, 0), scene_corners[0] + cv::Point2f(src.cols, 0), cv::Scalar(0, 255, 0), 4);
-
-
+	//cv::line(img_matches, scene_corners[0] + cv::Point2f(src.cols, 0), scene_corners[1] + cv::Point2f(src.cols, 0), cv::Scalar(0, 255, 0), 4);
+	//cv::line(img_matches, scene_corners[1] + cv::Point2f(src.cols, 0), scene_corners[2] + cv::Point2f(src.cols, 0), cv::Scalar(0, 255, 0), 4);
+	//cv::line(img_matches, scene_corners[2] + cv::Point2f(src.cols, 0), scene_corners[3] + cv::Point2f(src.cols, 0), cv::Scalar(0, 255, 0), 4);
+	//cv::line(img_matches, scene_corners[3] + cv::Point2f(src.cols, 0), scene_corners[0] + cv::Point2f(src.cols, 0), cv::Scalar(0, 255, 0), 4);
 
 	//-- Show detected matches
 	cv::imshow("SURF RANSAC FLANN Matches", img_matches);
 	cv::waitKey(1);
 }
 
-
 // http://www.coldvision.io/2016/06/27/object-detection-surf-knn-flann-opencv-3-x-cuda/
 // http://clopinet.com/fextract-book/IntroFS.pdf  // intro to feature extract
 void Sample_ExtractSIFT() {
 	//cv::Mat src = cv::imread("Data/img_color_1_object1.jpg", cv::IMREAD_GRAYSCALE);
 	//cv::Mat dst = cv::imread("Data/img_color_1.jpg", cv::IMREAD_GRAYSCALE);
-	//cv::Mat src = cv::imread("Data/K0/Pose_666.jpeg", cv::IMREAD_GRAYSCALE);
-	cv::Mat src = cv::imread("Data/DEPTH/K0/CPose1_0.png", cv::IMREAD_GRAYSCALE);
+	cv::Mat src = cv::imread("Data/K0/Pose_666.jpeg", cv::IMREAD_COLOR);
+	//cv::Mat src = cv::imread("Data/DEPTH/K0/CPose1_0.png", cv::IMREAD_GRAYSCALE);
 	cv::pyrDown(src, src);
-	//cv::Mat dst = cv::imread("Data/K1/Pose_666.jpeg", cv::IMREAD_GRAYSCALE);
-	cv::Mat dst = cv::imread("Data/DEPTH/K1/CPose1_0.png", cv::IMREAD_GRAYSCALE);
+	cv::Mat dst = cv::imread("Data/K1/Pose_666.jpeg", cv::IMREAD_COLOR);
+	//cv::Mat dst = cv::imread("Data/DEPTH/K1/CPose1_0.png", cv::IMREAD_GRAYSCALE);
 	cv::pyrDown(dst, dst);
 	std::vector<cv::Point2f> corres_src, corres_dst;
-	ExtractSIFTpoints(src, dst, corres_src, corres_dst, 400);
+	//ExtractSIFTpoints(src, dst, corres_src, corres_dst, 400);
 	ExtractSIFTpointsFLANN(src, dst, corres_src, corres_dst, 400);
 	ExtractSIFTpointsRANSACFLANN(src, dst, corres_src, corres_dst, 400);
-	ExtractSURFpoints(src, dst, corres_src, corres_dst, 400);
-	ExtractSURFpointsFLANN(src, dst, corres_src, corres_dst, 400);
-	ExtractSURFpointsRANSACFLANN(src, dst, corres_src, corres_dst, 400);
+	//ExtractSURFpoints(src, dst, corres_src, corres_dst, 400);
+	//ExtractSURFpointsFLANN(src, dst, corres_src, corres_dst, 400);
+	//ExtractSURFpointsRANSACFLANN(src, dst, corres_src, corres_dst, 400);
 	cv::waitKey(0);
 }
 #endif // !_SIFT_MATCHING_H
