@@ -3,6 +3,7 @@
 #define __SENSOR_H
 #include <string>
 #include <vector>
+#include <opencv2\opencv.hpp>
 
 using namespace std;
 
@@ -250,6 +251,41 @@ void LoadSingleGlobalIRMatrix(Sensor &sensor, int gid, char * filepath) {
 	//cout << sensors[i].dep_intr << endl;
 	//cout << sensors[i].dep_to_gl << endl;
 	
+	fclose(fp);
+	fp = NULL;
+}
+void LoadIRtoRGBMatrix(Sensor &sensor, char * filepath) {
+	FILE *fp = fopen(filepath, "r");
+	if (!fp) {
+		return;
+	}
+
+	cv::Mat gl_intr = cv::Mat::zeros(9, 1, CV_64FC1);
+	// camera matrix
+	for (int i = 0; i < 9; i++) {
+		float v;
+		fscanf(fp, "%f ", &v);
+		((double*)gl_intr.ptr())[i] = v;
+	}
+	cv::Mat gl_dist = cv::Mat::zeros(5, 1, CV_64FC1);
+	// camera matrix
+	for (int i = 0; i < 5; i++) {
+		float v;
+		fscanf(fp, "%f ", &v);
+		((double*)gl_dist.ptr())[i] = v;
+	}
+	// camera matrix
+	for (int i = 0; i < 16; i++) {
+		float v;
+		fscanf(fp, "%f ", &v);
+		((double*)sensor.dep_to_rgb.ptr())[i] = v;
+	}
+	
+	cout << "[DepToRGB_MAT] :: " << endl;
+	cout << gl_intr << endl;
+	cout << gl_dist	<< endl;
+	cout << sensor.dep_to_rgb << endl;
+
 	fclose(fp);
 	fp = NULL;
 }
