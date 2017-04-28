@@ -1,9 +1,11 @@
 #pragma once
+#define _SIFT_MATCHING_H
 #ifndef _SIFT_MATCHING_H
 #define _SIFT_MATCHING_H
 #include <cv_op.h>
 #include <opencv2\features2d\features2d.hpp>
-#include "opencv2/nonfree/features2d.hpp"
+#include <opencv2\features2d.hpp>
+
 using namespace std;
 void ExtractSIFTpoints(cv::Mat &src, cv::Mat &dst, vector<cv::Point2f> &corres_src, vector<cv::Point2f> &corres_dst, int minHessian = 400) {
 	if (!src.data || !dst.data) {
@@ -308,6 +310,8 @@ void ExtractSIFTpointsRANSACFLANN(cv::Mat &src, cv::Mat &dst, vector<cv::Point2f
 	//-- Show detected matches
 	cv::imshow("SIFT RANSAC FLANN Matches", img_matches);
 	cv::waitKey(1);
+
+	//return H;
 }
 
 

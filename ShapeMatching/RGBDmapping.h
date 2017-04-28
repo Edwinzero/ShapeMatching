@@ -3,7 +3,6 @@
 #define _RGBD_MAPPING_CL_H
 #include <CLutils.h>
 #include <cv_op.h>
-#include <opencv2\ocl\ocl.hpp>
 #include <Eigen_op.h>
 #include <Sensor.h>
 
@@ -257,7 +256,7 @@ public:
 #if 1
 		double rep[] = {
 			0, 1, 0, 0,
-			-1, 0, 0, 1.30,
+			-1, 0, 0, 0.69,
 			0, 0, 1, 0,
 			0, 0, 0, 1 };
 		MatToVec((cv::Mat(4, 4, CV_64F, rep)*extr).t(), M);

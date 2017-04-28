@@ -27,11 +27,11 @@ __kernel void depth_to_point(__global unsigned short* depth, __global float3 *po
 	float d = convert_float_rtz(depth[y * dim.x + x]) * 0.001;
 
 #if 1
-	if (d < 0.050 || d > 5.0) {
+	if (d < 0.050 || d > 2.0f) {
 		d = 0.0;
 	}
 
-	if (uv.x < 10 || uv.x > dim.x - 10 || uv.y < 10 || uv.y > dim.y - 10) {
+	if (uv.x < 20 || uv.x > dim.x - 20 || uv.y < 20 || uv.y > dim.y - 20) {
 		d = 0.0;
 	}
 #endif

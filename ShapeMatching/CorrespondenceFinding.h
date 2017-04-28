@@ -2,11 +2,14 @@
 #ifndef _CORRESPONDENCE_FINDING_H
 #define _CORRESPONDENCE_FINDING_H
 #include <SIFTmatching.h>
+#include <ThirdParty\GMS-Feature-Matcher-master\include\Header.h>
+#include <ThirdParty\GMS-Feature-Matcher-master\include\GMS.h>
 #include <Sensor.h>
 #include <Eigen_op.h>
 #include <cv_op.h>
 
 namespace CORRES {
+	// corres ( srcID, dstID )
 	void ProjectiveCorresondence(std::vector<Eigen::Vector4f> &srcP, std::vector<Eigen::Vector4f> &srcN, std::vector<Eigen::Vector4f> &dstP, std::vector<Eigen::Vector4f> &dstN, 
 		std::vector<pair<int, int>> &corres, Sensor &sensrc, Sensor &sendst) {
 		corres.clear();

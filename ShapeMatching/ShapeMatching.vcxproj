@@ -40,7 +40,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v100</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
@@ -80,12 +80,12 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>E:\GLWrappers\opencv\build\include;E:\GLWrappers\eigen-3.3.1;E:/GLWrappers/flann1.71/flann/include;C:\GLWrappers\flann\include;C:\GLWrappers\eigen-5.2.6;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include;C:\GLWrappers\opencv\build\include;$(SolutionDir);$(ProjectDir)imgui;$(ProjectDir);$(SolutionDir)Depends\libjpeg-turbo;$(SolutionDir)Depends\glm;$(SolutionDir)Depends\OpenGL;$(SolutionDir)Depends;$(SolutionDir)Depends\imgui\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\GLWrappers\opencv3.2\build\include;E:\GLWrappers\eigen-3.3.1;E:/GLWrappers/flann1.71/flann/include;C:\GLWrappers\flann\include;C:\GLWrappers\eigen-5.2.6;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\include;C:\GLWrappers\opencv\build\include;$(SolutionDir);$(ProjectDir)imgui;$(ProjectDir);$(SolutionDir)Depends\libjpeg-turbo;$(SolutionDir)Depends\glm;$(SolutionDir)Depends\OpenGL;$(SolutionDir)Depends;$(SolutionDir)Depends\imgui\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\lib\x64;C:\GLWrappers\flann\lib;E:\GLWrappers\flann1.71\flann\lib;E:\GLWrappers\opencv\build\x64\vc10\lib;C:\GLWrappers\opencv\build\x64\vc10\lib;$(SolutionDir)Depends;$(SolutionDir)Depends\OpenGL\lib\x86_64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;freeglutd.lib;glew64.lib;OpenCL.lib;SOIL.lib;opencv_core2411d.lib;opencv_calib3d2411d.lib;opencv_imgproc2411d.lib;opencv_highgui2411d.lib;opencv_features2d2411d.lib;opencv_nonfree2411d.lib;opencv_flann2411d.lib;opencv_ocl2411d.lib;flann.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>E:\GLWrappers\opencv3.2\build\x64\vc14\lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\lib\x64;C:\GLWrappers\flann\lib;E:\GLWrappers\flann1.71\flann\lib;E:\GLWrappers\opencv\build\x64\vc10\lib;C:\GLWrappers\opencv\build\x64\vc10\lib;$(SolutionDir)Depends;$(SolutionDir)Depends\OpenGL\lib\x86_64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opengl32.lib;freeglutd.lib;glew64.lib;OpenCL.lib;SOIL.lib;opencv_world320d.lib;flann.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OptimizeReferences>
       </OptimizeReferences>
@@ -141,6 +141,7 @@
     <ClInclude Include="FPFH.h" />
     <ClInclude Include="GaussianNoise.h" />
     <ClInclude Include="GLobjects.h" />
+    <ClInclude Include="GMSmatching.h" />
     <ClInclude Include="ICP.h" />
     <ClInclude Include="ICPRender.h" />
     <ClInclude Include="IMGUI\imconfig.h" />
@@ -161,6 +162,8 @@
     <ClInclude Include="RGBDmappingCPU.h" />
     <ClInclude Include="Sensor.h" />
     <ClInclude Include="SIFTmatching.h" />
+    <ClInclude Include="ThirdParty\GMS-Feature-Matcher-master\include\GMS.h" />
+    <ClInclude Include="ThirdParty\GMS-Feature-Matcher-master\include\Header.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="IMGUI\imgui.ini" />

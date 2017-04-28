@@ -158,6 +158,15 @@
     <ClInclude Include="CorrespondenceFinding.h">
       <Filter>Header Files\Corresponedence</Filter>
     </ClInclude>
+    <ClInclude Include="ThirdParty\GMS-Feature-Matcher-master\include\GMS.h">
+      <Filter>Header Files\Feature</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\GMS-Feature-Matcher-master\include\Header.h">
+      <Filter>Header Files\Feature</Filter>
+    </ClInclude>
+    <ClInclude Include="GMSmatching.h">
+      <Filter>Header Files\Feature</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="IMGUI\imgui.ini">

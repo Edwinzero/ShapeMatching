@@ -1,8 +1,34 @@
 #include <RenderPipeline.h>
 #if 1
+void AverageDepthMap() {
+	char filepath[128];
+	for (int p = 0; p < 4; p++) {
+		for (int k = 0; k < 2; k++) {
+			for (int i = 1; i < 9; i++) {
+				cv::Mat accum = cv::Mat::zeros(424, 512, CV_32FC1);
+				for (int j = 0; j < 30; j++) {
+					sprintf(filepath, "Data/BF/People%d/K%d/Pose%d_%d.png", p, k, i, j);
+					cv::Mat dep = cv::imread(filepath, CV_LOAD_IMAGE_ANYDEPTH);
+					cv::Mat fdep(424, 512, CV_32FC1);
+					dep.convertTo(fdep, CV_32FC1);
+					accum += fdep;
+				}
+				accum = accum / 30;
+				cv::Mat save;
+				accum.convertTo(save, CV_16UC1);
+				sprintf(filepath, "Data/BF/People%d/K%d/Pose%d_ave.png", p, k, i);
+				cv::imwrite(filepath, save);
+			}
+		}
+	}
+	
+
+		
+}
 int main(int argc, char **argv) {
 	//Sample_KDtree();
 	//Sample_ExtractSIFT();
+	//AverageDepthMap();
 	Run_Render(argc, argv, "Test");
 	return 0;
 }

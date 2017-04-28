@@ -46,25 +46,25 @@ std::vector<Sensor> sensors;
 PointCloud pc0, pc1;
 GLmem object0, object1;
 //FastGlobalReg fgr;
-std::vector<std::pair<int, int>> corres;
-bool doFGR = false;
-bool doICP = false;
-bool doReset = false;
+std::vector<std::pair<int, int>> corres0, corres1;
+bool doFGR = false;				// key: R
+bool doICP = false;				// key: E
+bool doReset = false;			// key: T
 
 // PointCloud Rendering
 GLmem moca_model;
 
 // RGBD mapping + backprojection
-Mapping process;
+Mapping clprocess;
 PointCloud Kpc0, Kpc1;
 GLmem Kobject0, Kobject1;
 cv::Mat depth0, depth1;
 cv::Mat color0, color1;
 // Shang
-PointCloud Kpc_0, Kpc_1;
-GLmem Kobject_0, Kobject_1;
-cv::Mat depth_0, depth_1;
-cv::Mat color_0, color_1;
+PointCloud Kpc_0, Kpc_1, Kpc_2, Kpc_3;
+GLmem Kobject_0, Kobject_1, Kobject_2, Kobject_3;
+cv::Mat depth_0, depth_1, depth_2, depth_3;
+cv::Mat color_0, color_1, color_2, color_3;
 Sensor bfsensors[2];
 
 // Feature detection
@@ -160,6 +160,30 @@ void DrawScene2D() {
 	}
 }
 
+void DrawGLmem(GLuint &program, PointCloud &pc, GLmem &mem) {
+	glEnable(GL_PROGRAM_POINT_SIZE);
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	if (pc.hasPoint) {
+		glUseProgram(program);
+		Eigen::Matrix4f proj = Eigen::Matrix4f::Identity();
+		Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
+		glGetFloatv(GL_PROJECTION_MATRIX, proj.data());
+		glGetFloatv(GL_MODELVIEW_MATRIX, view.data());
+		glUniformMatrix4fv(glGetUniformLocation(program, "proj"), 1, GL_FALSE, proj.data());
+		glUniformMatrix4fv(glGetUniformLocation(program, "view"), 1, GL_FALSE, view.data());
+		glUniformMatrix4fv(glGetUniformLocation(program, "model"), 1, GL_FALSE, pc.model.data());
+		glUniform3fv(glGetUniformLocation(program, "color"), 1, Eigen::Vector3f(1.0f, 0.0f, 0.0f).data());
+		glBindVertexArray(mem.vao);
+		glDrawArrays(GL_POINTS, 0, mem.m_numVerts);
+		glBindVertexArray(0);
+
+		glUseProgram(0);
+	}
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+}
+
 void DrawScene3D() {
 	{
 		//glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_TRANSFORM_BIT);
@@ -194,40 +218,16 @@ void DrawScene3D() {
 			glMatrixMode(GL_MODELVIEW);
 			glPushMatrix();
 			if (Kpc_0.hasPoint) {
-				glUseProgram(GLPointRenderProgram);
-				Eigen::Matrix4f proj = Eigen::Matrix4f::Identity();
-				Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
-				glGetFloatv(GL_PROJECTION_MATRIX, proj.data());
-				glGetFloatv(GL_MODELVIEW_MATRIX, view.data());
-				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "proj"), 1, GL_FALSE, proj.data());
-				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "view"), 1, GL_FALSE, view.data());
-				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "model"), 1, GL_FALSE, Kpc_0.model.data());
-				glUniform3fv(glGetUniformLocation(GLPointRenderProgram, "color"), 1, Eigen::Vector3f(1.0f, 0.0f, 0.0f).data());
-				glBindVertexArray(Kobject_0.vao);
-				glDrawArrays(GL_POINTS, 0, Kobject_0.m_numVerts);
-				glBindVertexArray(0);
-
-				glUseProgram(0);
-			}
-			glMatrixMode(GL_MODELVIEW);
-			glPopMatrix();
-			glMatrixMode(GL_MODELVIEW);
-			glPushMatrix();
+				DrawGLmem(GLPointRenderProgram, Kpc_0, Kobject_0);
+			}			
 			if (Kpc_1.hasPoint) {
-				glUseProgram(GLPointRenderProgram);
-				Eigen::Matrix4f proj = Eigen::Matrix4f::Identity();
-				Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
-				glGetFloatv(GL_PROJECTION_MATRIX, proj.data());
-				glGetFloatv(GL_MODELVIEW_MATRIX, view.data());
-				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "proj"), 1, GL_FALSE, proj.data());
-				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "view"), 1, GL_FALSE, view.data());
-				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "model"), 1, GL_FALSE, Kpc_1.model.data());
-				glUniform3fv(glGetUniformLocation(GLPointRenderProgram, "color"), 1, Eigen::Vector3f(0.0f, 1.0f, 0.0f).data());
-				glBindVertexArray(Kobject_1.vao);
-				glDrawArrays(GL_POINTS, 0, Kobject_1.m_numVerts);
-				glBindVertexArray(0);
-
-				glUseProgram(0);
+				DrawGLmem(GLPointRenderProgram, Kpc_1, Kobject_1);
+			}
+			if (Kpc_2.hasPoint) {
+				DrawGLmem(GLPointRenderProgram, Kpc_2, Kobject_2);
+			}
+			if (Kpc_3.hasPoint) {
+				DrawGLmem(GLPointRenderProgram, Kpc_3, Kobject_3);
 			}
 			glMatrixMode(GL_MODELVIEW);
 			glPopMatrix();
@@ -237,83 +237,23 @@ void DrawScene3D() {
 			glMatrixMode(GL_MODELVIEW);
 			glPushMatrix();
 			if (Kpc0.hasPoint) {
-				glUseProgram(GLPointRenderProgram);
-				Eigen::Matrix4f proj = Eigen::Matrix4f::Identity();
-				Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
-				glGetFloatv(GL_PROJECTION_MATRIX, proj.data());
-				glGetFloatv(GL_MODELVIEW_MATRIX, view.data());
-				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "proj"), 1, GL_FALSE, proj.data());
-				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "view"), 1, GL_FALSE, view.data());
-				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "model"), 1, GL_FALSE, Kpc0.model.data());
-				glUniform3fv(glGetUniformLocation(GLPointRenderProgram, "color"), 1, Eigen::Vector3f(1.0f, 0.0f, 0.0f).data());
-				glBindVertexArray(Kobject0.vao);
-				glDrawArrays(GL_POINTS, 0, Kobject0.m_numVerts);
-				glBindVertexArray(0);
-
-				glUseProgram(0);
+				DrawGLmem(GLPointRenderProgram, Kpc0, Kobject0);
 			}
-			glMatrixMode(GL_MODELVIEW);
-			glPopMatrix();
-			glMatrixMode(GL_MODELVIEW);
-			glPushMatrix();
 			if (Kpc1.hasPoint) {
-				glUseProgram(GLPointRenderProgram);
-				Eigen::Matrix4f proj = Eigen::Matrix4f::Identity();
-				Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
-				glGetFloatv(GL_PROJECTION_MATRIX, proj.data());
-				glGetFloatv(GL_MODELVIEW_MATRIX, view.data());
-				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "proj"), 1, GL_FALSE, proj.data());
-				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "view"), 1, GL_FALSE, view.data());
-				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "model"), 1, GL_FALSE, Kpc1.model.data());
-				glUniform3fv(glGetUniformLocation(GLPointRenderProgram, "color"), 1, Eigen::Vector3f(0.0f, 1.0f, 0.0f).data());
-				glBindVertexArray(Kobject1.vao);
-				glDrawArrays(GL_POINTS, 0, Kobject1.m_numVerts);
-				glBindVertexArray(0);
-
-				glUseProgram(0);
+				DrawGLmem(GLPointRenderProgram, Kpc1, Kobject1);
 			}
 			glMatrixMode(GL_MODELVIEW);
 			glPopMatrix();
 		}
-		if (0) {
+		if (0) { // ply registration
 			glEnable(GL_PROGRAM_POINT_SIZE);
 			glMatrixMode(GL_MODELVIEW);
 			glPushMatrix();
 			if (pc0.hasPoint) {
-				glUseProgram(GLPointRenderProgram);
-				Eigen::Matrix4f proj = Eigen::Matrix4f::Identity();
-				Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
-				glGetFloatv(GL_PROJECTION_MATRIX, proj.data());
-				glGetFloatv(GL_MODELVIEW_MATRIX, view.data());
-				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "proj"), 1, GL_FALSE, proj.data());
-				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "view"), 1, GL_FALSE, view.data());
-				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "model"), 1, GL_FALSE, pc0.model.data());
-				glUniform3fv(glGetUniformLocation(GLPointRenderProgram, "color"), 1, Eigen::Vector3f(1.0f, 0.0f, 0.0f).data());
-				glBindVertexArray(object0.vao);
-				glDrawArrays(GL_POINTS, 0, object0.m_numVerts);
-				glBindVertexArray(0);
-
-				glUseProgram(0);
+				DrawGLmem(GLPointRenderProgram, pc0, object0);
 			}
-			glMatrixMode(GL_MODELVIEW);
-			glPopMatrix();
-			glMatrixMode(GL_MODELVIEW);
-			glPushMatrix();
 			if (pc1.hasPoint) {
-				glUseProgram(GLPointRenderProgram);
-				Eigen::Matrix4f proj = Eigen::Matrix4f::Identity();
-				Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
-				glGetFloatv(GL_PROJECTION_MATRIX, proj.data());
-				glGetFloatv(GL_MODELVIEW_MATRIX, view.data());
-				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "proj"), 1, GL_FALSE, proj.data());
-				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "view"), 1, GL_FALSE, view.data());
-				glUniformMatrix4fv(glGetUniformLocation(GLPointRenderProgram, "model"), 1, GL_FALSE, pc1.model.data());
-				glUniform3fv(glGetUniformLocation(GLPointRenderProgram, "color"), 1, Eigen::Vector3f(0.0f, 1.0f, 0.0f).data());
-				glBindVertexArray(object1.vao);
-				glDrawArrays(GL_POINTS, 0, object1.m_numVerts);
-				glBindVertexArray(0);
-
-				glUseProgram(0);
+				DrawGLmem(GLPointRenderProgram, pc1, object1);
 				//glEnableClientState(GL_VERTEX_ARRAY);
 				//glEnableClientState(GL_COLOR_ARRAY);
 				//glColor3f(0.0f, 1.0f, 0.0f);
@@ -499,63 +439,84 @@ void Reshape(int w, int h)
 void CLImageProcess() {
 	// rgbd mapping
 	cv::Mat res0;
-	cv::Mat res1;
+	cv::Mat res1, res2, res3;
 	if (MOCA) {
-		process.DepthToRGBMapping(sensors[0].cali_ir.intr.IntrVec(), sensors[0].cali_ir.extr,
+		clprocess.DepthToRGBMapping(sensors[0].cali_ir.intr.IntrVec(), sensors[0].cali_ir.extr,
 			sensors[0].cali_rgb.intr.IntrVec(), sensors[0].cali_rgb.extr,
 			(unsigned short*)depth0.ptr(), color0, res0, Kpc0.points);
 		ImgShow("CL RGBDmapping K0", res0, 512, 424);
 
-		process.DepthToRGBMapping(sensors[1].cali_ir.intr.IntrVec(), sensors[1].cali_ir.extr,
+		clprocess.DepthToRGBMapping(sensors[1].cali_ir.intr.IntrVec(), sensors[1].cali_ir.extr,
 			sensors[1].cali_rgb.intr.IntrVec(), sensors[1].cali_rgb.extr,
 			(unsigned short*)depth1.ptr(), color1, res1, Kpc1.points);
 		ImgShow("CL RGBDmapping K1", res1, 512, 424);
 	}
 	// backproject
 	if (MOCA) {
-		process.BackProjectPoints(sensors[0].cali_ir.intr.IntrVec(), sensors[0].dep_to_gl, (unsigned short*)depth0.ptr(), Kpc0.points, Kpc0.normals);
+		clprocess.BackProjectPoints(sensors[0].cali_ir.intr.IntrVec(), sensors[0].dep_to_gl, (unsigned short*)depth0.ptr(), Kpc0.points, Kpc0.normals);
 		Kpc0.ScalePointData(50.0f);
 		CreateGLmem(Kobject0, Kpc0);
 
-		process.BackProjectPoints(sensors[1].cali_ir.intr.IntrVec(), sensors[1].dep_to_gl, (unsigned short*)depth1.ptr(), Kpc1.points, Kpc1.normals);
+		clprocess.BackProjectPoints(sensors[1].cali_ir.intr.IntrVec(), sensors[1].dep_to_gl, (unsigned short*)depth1.ptr(), Kpc1.points, Kpc1.normals);
 		Kpc1.ScalePointData(50.0f);
 		CreateGLmem(Kobject1, Kpc1);
 	}
 
 
 	if (BF) {// shang
-		process.DepthToRGBMapping(bfsensors[0].cali_ir.intr.IntrVec(), bfsensors[0].cali_ir.extr, bfsensors[0].dep_to_rgb,
+		clprocess.DepthToRGBMapping(bfsensors[0].cali_ir.intr.IntrVec(), bfsensors[0].cali_ir.extr, bfsensors[0].dep_to_rgb,
 			bfsensors[0].cali_rgb.intr.IntrVec(), bfsensors[0].cali_rgb.extr,
 			(unsigned short*)depth_0.ptr(), color_0, res0, Kpc_0.points);
 		ImgShow("CL RGBDmapping K0", res0, 512, 424);
 
-		process.DepthToRGBMapping(bfsensors[1].cali_ir.intr.IntrVec(), bfsensors[1].cali_ir.extr, bfsensors[1].dep_to_rgb,
+		clprocess.DepthToRGBMapping(bfsensors[1].cali_ir.intr.IntrVec(), bfsensors[1].cali_ir.extr, bfsensors[1].dep_to_rgb,
 			bfsensors[1].cali_rgb.intr.IntrVec(), bfsensors[1].cali_rgb.extr,
 			(unsigned short*)depth_1.ptr(), color_1, res1, Kpc_1.points);
 		ImgShow("CL RGBDmapping K1", res1, 512, 424);
+
+		clprocess.DepthToRGBMapping(bfsensors[0].cali_ir.intr.IntrVec(), bfsensors[0].cali_ir.extr, bfsensors[0].dep_to_rgb,
+			bfsensors[0].cali_rgb.intr.IntrVec(), bfsensors[0].cali_rgb.extr,
+			(unsigned short*)depth_2.ptr(), color_2, res2, Kpc_2.points);
+		ImgShow("CL RGBDmapping K0", res2, 512, 424);
+
+		clprocess.DepthToRGBMapping(bfsensors[1].cali_ir.intr.IntrVec(), bfsensors[1].cali_ir.extr, bfsensors[1].dep_to_rgb,
+			bfsensors[1].cali_rgb.intr.IntrVec(), bfsensors[1].cali_rgb.extr,
+			(unsigned short*)depth_3.ptr(), color_3, res3, Kpc_3.points);
+		ImgShow("CL RGBDmapping K1", res3, 512, 424);
 	}
 	if (BF) {//shang
-		process.BackProjectPointsShang(bfsensors[0].cali_ir.intr.IntrVec(), bfsensors[0].cali_ir.extr, (unsigned short*)depth_0.ptr(), Kpc_0.points, Kpc_0.normals);
+		clprocess.BackProjectPointsShang(bfsensors[0].cali_ir.intr.IntrVec(), bfsensors[0].cali_ir.extr, (unsigned short*)depth_0.ptr(), Kpc_0.points, Kpc_0.normals);
 		Kpc_0.ScalePointData(50.0f);
 		CreateGLmem(Kobject_0, Kpc_0);
 
-		process.BackProjectPointsShang(bfsensors[1].cali_ir.intr.IntrVec(), bfsensors[1].cali_ir.extr.inv(), (unsigned short*)depth_1.ptr(), Kpc_1.points, Kpc_1.normals);
+		clprocess.BackProjectPointsShang(bfsensors[1].cali_ir.intr.IntrVec(), bfsensors[1].cali_ir.extr, (unsigned short*)depth_1.ptr(), Kpc_1.points, Kpc_1.normals);
 		Kpc_1.ScalePointData(50.0f);
 		CreateGLmem(Kobject_1, Kpc_1);
+
+		clprocess.BackProjectPointsShang(bfsensors[0].cali_ir.intr.IntrVec(), bfsensors[0].cali_ir.extr, (unsigned short*)depth_2.ptr(), Kpc_2.points, Kpc_2.normals);
+		Kpc_2.ScalePointData(50.0f);
+		CreateGLmem(Kobject_2, Kpc_2);
+
+		clprocess.BackProjectPointsShang(bfsensors[1].cali_ir.intr.IntrVec(), bfsensors[1].cali_ir.extr, (unsigned short*)depth_3.ptr(), Kpc_3.points, Kpc_3.normals);
+		Kpc_3.ScalePointData(50.0f);
+		CreateGLmem(Kobject_3, Kpc_3);
 	}
 
 	// feature matching
-	if(0){
-		std::vector<cv::Point2f> corres_src, corres_dst;
-		ExtractSIFTpointsFLANN(res0, res1, corres_src, corres_dst, 400);
-		ExtractSIFTpointsRANSACFLANN(res0, res1, corres_src, corres_dst, 400);
-		cv::waitKey(0);
+	if(1){
+		//std::vector<cv::Point2f> corres_src, corres_dst;
+		//ExtractSIFTpointsFLANN(res0, res2, corres_src, corres_dst, 400);
+		//ExtractSIFTpointsRANSACFLANN(res0, res2, corres_src, corres_dst, 400);
+		//ExtractSIFTpointsFLANN(res1, res3, corres_src, corres_dst, 400);
+		//ExtractSIFTpointsRANSACFLANN(res1, res3, corres_src, corres_dst, 400);
+		//cv::waitKey(0);
 	}
 
 	// correspondence finding
 	{
 		// projective data
-		//CORRES::ProjectiveCorresondence(Kpc0.points, Kpc0.normals, Kpc1.points, Kpc1.normals, corres, sensors[0], sensors[1]);
+		CORRES::ProjectiveCorresondence(Kpc_0.points, Kpc_0.normals, Kpc_2.points, Kpc_2.normals, corres0, bfsensors[0], bfsensors[0]);
+		CORRES::ProjectiveCorresondence(Kpc_1.points, Kpc_1.normals, Kpc_3.points, Kpc_3.normals, corres1, bfsensors[1], bfsensors[1]);
 	}
 }
 //=========================================================================
@@ -570,12 +531,38 @@ void Update(void) {
 	}
 
 	if (doICP) {
-		float err = 0.0;
 		Eigen::Matrix3f rot = Eigen::Matrix3f::Identity();
 		Eigen::Vector3f trans = Eigen::Vector3f::Zero();
-		PointToPoint_ICP(pc0.points, pc1.points, rot, trans, err);
+		if (0) {
+			float rme = PointToPoint_ICP(Kpc_0.points, Kpc_2.points, corres0, rot, trans);
+			std::cout << "[Point to Point SVD ICP] :: " << std::endl;
+			std::cout << rot << std::endl;
+			std::cout << trans << std::endl;
+			std::cout << "rme : " << rme << std::endl;
+			std::cout << std::endl;
+		}
+		else {
+
+			// update pose
+			std::cout << "[Point to Plane Iterative ICP] :: " << std::endl;
+			for (int i = 0; i < 15; i++) {
+				float rme = PointToPlaneIter_ICP(Kpc_0.points, Kpc_2.points, Kpc_2.normals, rot, trans);
+
+				if (i < 14) {
+					continue;
+				}
+
+				std::cout << ">> Iter " << i << " ======" << std::endl;
+				std::cout << rot << std::endl;
+				std::cout << trans << std::endl;
+				std::cout << "rme : " << rme << std::endl;
+				std::cout << std::endl;
+				//std::cout << out_rot.determinant() << std::endl;
+			}
+
+		}
 		//PointToPlane_ICP(pc0.points, pc1.points, pc1.normals, rot, trans, err);
-		ConstructMatEigenToEigen4(pc0.model, rot, trans);
+		ConstructMatEigenToEigen4(Kpc_1.model, rot, trans);
 		doICP = false;
 	}
 
@@ -596,7 +583,7 @@ void Update(void) {
 		{
 			std::vector<char> kernelfile;
 			LoadKernelText(kernelfile, "Kernels/RGBDmapping.cl");
-			process.UpdateShader(kernelfile.data());
+			clprocess.UpdateShader(kernelfile.data());
 		}
 		CLImageProcess();
 		reComplieKernel = false;
@@ -708,7 +695,7 @@ void MouseWheel(int button, int dir, int x, int y)
 	}
 }
 
-void MouseCallback(int button, int state, int x, int y)
+void MouseEventCallback(int button, int state, int x, int y)
 {
 	if (mouseEvent(button, state, x, y))
 	{
@@ -779,7 +766,7 @@ void Init_OpenGL(int argc, char **argv, const char* title)
 	glutIdleFunc(Update);
 	glutKeyboardFunc(keyboardCallback);
 	glutSpecialFunc(KeyboardSpecial);
-	glutMouseFunc(MouseCallback);
+	glutMouseFunc(MouseEventCallback);
 	glutMouseWheelFunc(MouseWheel);
 	glutMotionFunc(MouseDragCallback);
 	glutPassiveMotionFunc(MouseMoveCallback);
@@ -880,19 +867,31 @@ void Init_Sensors(void) {
 		cv::Mat tmp0;
 		tmp0 = cv::imread(filepath, CV_LOAD_IMAGE_COLOR);
 		cv::undistort(tmp0, color_0, bfsensors[0].cali_rgb.intr.cameraMatrix, bfsensors[0].cali_rgb.intr.distCoeffs);
-		//cv::flip(color_0, color_0, 1);
 
 		sprintf(filepath, "Data/BF/People0/K1/CPose%d_0.png", 1);
 		cv::Mat tmp1;
 		tmp1 = cv::imread(filepath, CV_LOAD_IMAGE_COLOR);
 		cv::undistort(tmp1, color_1, bfsensors[1].cali_rgb.intr.cameraMatrix, bfsensors[1].cali_rgb.intr.distCoeffs);
-		//cv::flip(color_1, color_1, 1);
+
+		sprintf(filepath, "Data/BF/People0/K0/CPose%d_0.png", 2);
+		tmp0 = cv::imread(filepath, CV_LOAD_IMAGE_COLOR);
+		cv::undistort(tmp0, color_2, bfsensors[0].cali_rgb.intr.cameraMatrix, bfsensors[0].cali_rgb.intr.distCoeffs);
+
+		sprintf(filepath, "Data/BF/People0/K1/CPose%d_0.png", 2);
+		tmp1 = cv::imread(filepath, CV_LOAD_IMAGE_COLOR);
+		cv::undistort(tmp1, color_3, bfsensors[1].cali_rgb.intr.cameraMatrix, bfsensors[1].cali_rgb.intr.distCoeffs);
 
 		sprintf(filepath, "Data/BF/People0/K0/Pose%d_0.png", 1);
 		depth_0 = cv::imread(filepath, CV_LOAD_IMAGE_ANYDEPTH);
 
 		sprintf(filepath, "Data/BF/People0/K1/Pose%d_0.png", 1);
 		depth_1 = cv::imread(filepath, CV_LOAD_IMAGE_ANYDEPTH);
+
+		sprintf(filepath, "Data/BF/People0/K0/Pose%d_0.png", 2);
+		depth_2 = cv::imread(filepath, CV_LOAD_IMAGE_ANYDEPTH);
+
+		sprintf(filepath, "Data/BF/People0/K1/Pose%d_0.png", 2);
+		depth_3 = cv::imread(filepath, CV_LOAD_IMAGE_ANYDEPTH);
 	}
 	// bilaterial filter for depth image
 	if(0){
@@ -923,19 +922,19 @@ void Init_2DContents() {
 
 void Init_OpenCL(void) {
 	// init fusion
-	process.depth_img_size = cl::int2(512, 424);
-	process.color_img_size = cl::int2(1920, 1080);
-	process.bound[0] = cl::float3(-1.28, 0.00 - 0.5, -1.28);
-	process.bound[1] = cl::float3(+1.28, 2.56 - 0.5, +1.28);
-	process.global_size2 = 512;
-	process.local_size2 = 4;
-	process.global_size3 = 256;
-	process.local_size3 = 8;
-	process.Create();
+	clprocess.depth_img_size = cl::int2(512, 424);
+	clprocess.color_img_size = cl::int2(1920, 1080);
+	clprocess.bound[0] = cl::float3(-1.28, 0.00 - 0.5, -1.28);
+	clprocess.bound[1] = cl::float3(+1.28, 2.56 - 0.5, +1.28);
+	clprocess.global_size2 = 512;
+	clprocess.local_size2 = 4;
+	clprocess.global_size3 = 256;
+	clprocess.local_size3 = 8;
+	clprocess.Create();
 	{
 		std::vector<char> kernelfile;
 		LoadKernelText(kernelfile, "Kernels/RGBDmapping.cl");
-		process.UpdateShader(kernelfile.data());
+		clprocess.UpdateShader(kernelfile.data());
 	}
 
 }
