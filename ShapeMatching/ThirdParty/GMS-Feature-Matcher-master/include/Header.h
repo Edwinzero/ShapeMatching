@@ -11,10 +11,9 @@
 #include <ctime>
 #include <map>
 using namespace std;
-using namespace cv;
 
 #ifdef USE_GPU
 	#include <opencv2/cudafeatures2d.hpp>
-	using cuda::GpuMat;
+	using cv::cuda::GpuMat;
 #endif
 

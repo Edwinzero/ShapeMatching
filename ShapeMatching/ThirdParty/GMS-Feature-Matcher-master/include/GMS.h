@@ -22,11 +22,11 @@ class GMS
 {
 private:
 	// variable
-	vector<DMatch> inlier, matches;
-	vector<KeyPoint> kpt1, kpt2;
+	vector<cv::DMatch> inlier, matches;
+	vector<cv::KeyPoint> kpt1, kpt2;
 	vector<int> IdxToRightRegion, kpts_num_of_each_region, IsInlier;
 	vector<map<int, int> > motion_number;
-	Size sz1, sz2;		// size for left and right image
+	cv::Size sz1, sz2;		// size for left and right image
 	
 
 	// parameter
@@ -38,8 +38,8 @@ public:
 	~GMS() {};
 
 	// init variable
-	void init(Size sz1_p, Size sz2_p, vector<KeyPoint> &kpt1_p, vector<KeyPoint> &kpt2_p,
-		vector<DMatch> &matches_p)
+	void init(cv::Size sz1_p, cv::Size sz2_p, vector<cv::KeyPoint> &kpt1_p, vector<cv::KeyPoint> &kpt2_p,
+		vector<cv::DMatch> &matches_p)
 	{
 		sz1 = sz1_p;	sz2 = sz2_p;
 		kpt1 = kpt1_p;	kpt2 = kpt2_p;
@@ -62,13 +62,13 @@ public:
 	// get inlier
 	void run(int type, int rp);
 
-	vector<DMatch> getInlier(int withrotation = 0);
+	vector<cv::DMatch> getInlier(int withrotation = 0);
 	size_t getInlierSize() { return inlier.size(); }
 
 private:
 	int num1, num2, stepX1, stepX2, stepY1, stepY2;
-	int getLeftRegion(DMatch &match, int type) {
-		Point2i pt = kpt1[match.queryIdx].pt;
+	int getLeftRegion(cv::DMatch &match, int type) {
+		cv::Point2i pt = kpt1[match.queryIdx].pt;
 		switch (type)
 		{
 		case 2:	pt.x += stepX1 / 2; break;
@@ -89,8 +89,8 @@ private:
 			return  (pt.x / stepX1 + pt.y / stepY1 * num1);
 		}
 	}
-	int getRightRegion(DMatch &match, int type) {
-		Point2i pt = kpt2[match.trainIdx].pt;
+	int getRightRegion(cv::DMatch &match, int type) {
+		cv::Point2i pt = kpt2[match.trainIdx].pt;
 
 		switch (type) {
 		case 2:	pt.x += stepX2 / 2; break;
@@ -203,7 +203,7 @@ void GMS::run(int type, int rp) {
 	}
 }
 
-vector<DMatch> GMS::getInlier(int withRS) {
+vector<cv::DMatch> GMS::getInlier(int withRS) {
 	
 	if (withRS == 0) {
 		for (int i = 1; i <= 4; i++)
@@ -264,37 +264,37 @@ vector<DMatch> GMS::getInlier(int withRS) {
 
 
 // utility
-inline Mat DrawInlier(Mat &src1, Mat &src2, vector<KeyPoint> &kpt1, vector<KeyPoint> &kpt2, vector<DMatch> &inlier, int type) {
+inline cv::Mat DrawInlier(cv::Mat &src1, cv::Mat &src2, vector<cv::KeyPoint> &kpt1, vector<cv::KeyPoint> &kpt2, vector<cv::DMatch> &inlier, int type) {
 	const int height = max(src1.rows, src2.rows);
 	const int width = src1.cols + src2.cols;
-	Mat output(height, width, CV_8UC3, Scalar(0, 0, 0));
-	src1.copyTo(output(Rect(0,0,src1.cols,src1.rows)));
-	src2.copyTo(output(Rect(src1.cols, 0, src2.cols, src2.rows)));
+	cv::Mat output(height, width, CV_8UC3, cv::Scalar(0, 0, 0));
+	src1.copyTo(output(cv::Rect(0,0,src1.cols,src1.rows)));
+	src2.copyTo(output(cv::Rect(src1.cols, 0, src2.cols, src2.rows)));
 
 	if (type == 1)
 	{
 		for (size_t i = 0; i < inlier.size(); i++)
 		{
-			Point2f left = kpt1[inlier[i].queryIdx].pt;
-			Point2f right = (kpt2[inlier[i].trainIdx].pt + Point2f((float)src1.cols, 0.f));
-			line(output, left, right, Scalar(0, 255, 255));
+			cv::Point2f left = kpt1[inlier[i].queryIdx].pt;
+			cv::Point2f right = (kpt2[inlier[i].trainIdx].pt + cv::Point2f((float)src1.cols, 0.f));
+			line(output, left, right, cv::Scalar(0, 255, 255));
 		}
 	}
 	else if (type == 2)
  	{
 		for (size_t i = 0; i < inlier.size(); i++)
 		{
-			Point2f left = kpt1[inlier[i].queryIdx].pt;
-			Point2f right = (kpt2[inlier[i].trainIdx].pt + Point2f((float)src1.cols, 0.f));
-			line(output, left, right, Scalar(255, 0, 0));
+			cv::Point2f left = kpt1[inlier[i].queryIdx].pt;
+			cv::Point2f right = (kpt2[inlier[i].trainIdx].pt + cv::Point2f((float)src1.cols, 0.f));
+			line(output, left, right, cv::Scalar(255, 0, 0));
 		}
 
 		for (size_t i = 0; i < inlier.size(); i++)
 		{
-			Point2f left = kpt1[inlier[i].queryIdx].pt;
-			Point2f right = (kpt2[inlier[i].trainIdx].pt + Point2f((float)src1.cols, 0.f));
-			circle(output, left, 1, Scalar(0, 255, 255), 2);
-			circle(output, right, 1, Scalar(0, 255, 0), 2);
+			cv::Point2f left = kpt1[inlier[i].queryIdx].pt;
+			cv::Point2f right = (kpt2[inlier[i].trainIdx].pt + cv::Point2f((float)src1.cols, 0.f));
+			circle(output, left, 1, cv::Scalar(0, 255, 255), 2);
+			circle(output, right, 1, cv::Scalar(0, 255, 0), 2);
 		}
 	}
 
@@ -303,8 +303,8 @@ inline Mat DrawInlier(Mat &src1, Mat &src2, vector<KeyPoint> &kpt1, vector<KeyPo
 	return output;
 }
 
-inline void imresize(Mat &src, int height){
+inline void imresize(cv::Mat &src, int height){
 	double ratio = src.rows * 1.0 / height;
 	int width = static_cast<int>(src.cols * 1.0 / ratio);
-	resize(src, src, Size(width, height));
+	resize(src, src, cv::Size(width, height));
 }

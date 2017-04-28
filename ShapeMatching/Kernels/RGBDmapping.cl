@@ -128,6 +128,38 @@ __kernel void depth_to_color(__global float3 *points, __global uchar3 *color, __
 	mapbuf[id] = co;
 }
 
+__kernel void depth_to_color2(__global float3 *points, __global uchar3 *color, __global uchar3 *mapbuf, __global int2 *mapIDbuf,
+							 int2 ddim, int2 cdim, 
+							 float4 Dintr, float4 Cintr, float16 M)
+{
+	int x = get_global_id(0);
+	int y = get_global_id(1);
+	if(x >= ddim.x || y >= ddim.y){ return; }
+	int id = y * ddim.x + x;
+
+	float3 p = points[id];
+	// transform point from world space to color space
+	float3 c_p = M.lo.lo.xyz * p.x + M.lo.hi.xyz * p.y + M.hi.lo.xyz * p.z + M.hi.hi.xyz;
+
+	float2 xy = (float2)(c_p.x / c_p.z , c_p.y / c_p.z);
+	
+	int2 uv = convert_int2_rtp(xy * Cintr.lo + Cintr.hi - (float2)(5.0f, 0.0f));
+
+	uchar3 co = (uchar3)(0, 0, 0);
+	if(uv.x < 0 || uv.x >= cdim.x || uv.y < 0 || uv.y >= cdim.y){
+	//if(cdim.x == 1920 && cdim.y == 1080){
+		mapbuf[id] = co;
+		mapIDbuf[2*id] = id;
+		mapIDbuf[2*id + 1] = -1; 
+		return;
+	}
+	int cid = uv.y * cdim.x + uv.x;
+	co = color[cid];
+	mapbuf[id] = co;
+	mapIDbuf[2*id] = id;
+	mapIDbuf[2*id + 1] = cid; 
+}
+
 __kernel void feature_matching()
 {
 	/* code */

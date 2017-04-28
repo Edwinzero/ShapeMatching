@@ -315,7 +315,7 @@ float PointToPoint_iterICP(std::vector<Eigen::Vector3f> &src, std::vector<Eigen:
 }
 
 float PointToPoint_iterICP(std::vector<Eigen::Vector4f> &src4, std::vector<Eigen::Vector4f> &tar4,
-	Eigen::Matrix3f &rotation, Eigen::Vector3f &translation, float &err) {
+	Eigen::Matrix3f &rotation, Eigen::Vector3f &translation) {
 	if (src4.empty()) {
 		rotation.setIdentity();
 		translation.setZero();
@@ -486,8 +486,6 @@ float PointToPlaneIter_ICP(std::vector<Eigen::Vector4f> &src4, std::vector<Eigen
 
 	return rme(src4, tar4, rotation, translation);
 }
-
-
 
 
 #endif

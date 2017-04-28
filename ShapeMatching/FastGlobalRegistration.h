@@ -2,12 +2,13 @@
 #ifndef _FAST_GLOBAL_REIGISTRATION_H
 #define _FAST_GLOBAL_REIGISTRATION_H
 #include <vector>
-#include <flann/flann.hpp>
+#include <flann\flann.hpp>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <Eigen\Dense>
 #include <Eigen\Cholesky>
 #include <FPFH.h>
+
 
 using namespace std;
 using namespace Eigen;
@@ -36,18 +37,22 @@ public:
 	void LoadFeature(const vector<Vector3f> &points, const vector<VectorXf> &features);
 	void ReadFeature(const char *filepath);
 	void LoadCorrespondence(const vector<Vector3f> &points);
-	void LoadCorrespondence(const vector<Vector4f> &points);
+	void LoadCorrespondence(const vector<Vector4f> &points, const int divde);
+	void LoadCorrespondence(const vector<pair<int, int>> &corres);
 	void LoadPoints(const vector<Vector3f> &src, const vector<Vector3f> &dst);
 	void LoadPoints(const vector<Vector4f> &src, const vector<Vector4f> &dst);
 	void AdvancedMatching();
 	void NormalizePoints();
 	double OptimizePairwise(bool decrease_mu, int numIter, int src, int dst);
+
+	double rme();
+	
 	Matrix4f GetRes();
 
 	// some internal functions
 	void ReadFeature(const char* filepath, vector<Vector3f>& points, vector<VectorXf>& feature);
 
-	void SearchFLANNTree(flann::Index<flann::L2<float>>* index,
+	void SearchFLANNTree(::flann::Index<::flann::L2<float>>* index,
 		VectorXf& input,
 		std::vector<int>& indices,
 		std::vector<float>& dists,
@@ -80,12 +85,22 @@ inline void FastGlobalReg::LoadCorrespondence(const vector<Vector3f> &points) {
 	}
 }
 // only work when src = dst
-inline void FastGlobalReg::LoadCorrespondence(const vector<Vector4f> &points) {
-	int size = points.size();
+inline void FastGlobalReg::LoadCorrespondence(const vector<Vector4f> &points, const int divde = 1) {
+	int size = points.size()/ divde;
 	correspondence.clear();
 	correspondence.resize(size);
 	for (int i = 0; i < size; i++) {
-		correspondence[i] = std::pair<int, int>(i, i);
+		correspondence[i] = std::pair<int, int>(divde*i, divde*i);
+	}
+}
+
+// load with correspondence set
+inline void FastGlobalReg::LoadCorrespondence(const vector<pair<int, int>> &corres) {
+	int size = corres.size();
+	correspondence.clear();
+	correspondence.resize(size);
+	for (int i = 0; i < size; i++) {
+		correspondence[i] = corres[i];
 	}
 }
 
@@ -147,14 +162,14 @@ inline void FastGlobalReg::AdvancedMatching()
 	int dim = features[fi][0].size();
 
 	std::vector<float> dataset_fi(rows * dim);
-	flann::Matrix<float> dataset_mat_fi(&dataset_fi[0], rows, dim);
+	::flann::Matrix<float> dataset_mat_fi(&dataset_fi[0], rows, dim);
 
 	for (int y = 0; y < rows; y++) {
 		for(int x = 0; x < dim; x++){
 			dataset_fi[x + dim*y] = features[fi][y][x];
 		}
 	}
-	flann::Index<flann::L2<float>> feature_tree_i(dataset_mat_fi, flann::KDTreeSingleIndexParams(15));
+	::flann::Index<::flann::L2<float>> feature_tree_i(dataset_mat_fi, ::flann::KDTreeSingleIndexParams(15));
 	feature_tree_i.buildIndex();
 
 	// build FLANNTree - fj
@@ -162,14 +177,14 @@ inline void FastGlobalReg::AdvancedMatching()
 	dim = features[fj][0].size();
 
 	std::vector<float> dataset_fj(rows * dim);
-	flann::Matrix<float> dataset_mat_fj(&dataset_fj[0], rows, dim);
+	::flann::Matrix<float> dataset_mat_fj(&dataset_fj[0], rows, dim);
 
 	for (int y = 0; y < rows; y++) {
 		for (int x = 0; x < dim; x++) {
 			dataset_fj[x + dim*y] = features[fj][y][x];
 		}
 	}
-	flann::Index<flann::L2<float>> feature_tree_j(dataset_mat_fj, flann::KDTreeSingleIndexParams(15));
+	::flann::Index<::flann::L2<float>> feature_tree_j(dataset_mat_fj, ::flann::KDTreeSingleIndexParams(15));
 	feature_tree_j.buildIndex();
 
 	bool crosscheck = true;		// flag for second test
@@ -493,6 +508,26 @@ inline double FastGlobalReg::OptimizePairwise(bool decrease_mu, int numIter, int
 	return miu;
 }
 
+
+
+inline double FastGlobalReg::rme() {
+	if (points[0].empty()) {
+		return 0.0f;
+	}
+	Eigen::Matrix3f R;
+	Eigen::Vector3f t;
+	R = resTransform.block<3, 3>(0, 0);
+	t = resTransform.block<3, 1>(0, 3);
+	double e = 0.0f;
+	for (int i = 0; i < points[0].size(); i++) {
+		Eigen::Vector3f d = points[1][i] - R * points[0][i] - t;
+		e += d.dot(d);
+	}
+	e /= (double)(points[1].size());
+
+	return sqrt(e);
+}
+
 inline Matrix4f FastGlobalReg::GetRes()
 {
 
@@ -536,7 +571,7 @@ inline void FastGlobalReg::ReadFeature(const char * filepath, vector<Vector3f>& 
 	fclose(fp);
 }
 
-inline void FastGlobalReg::SearchFLANNTree(flann::Index<flann::L2<float>>* index, VectorXf& input, std::vector<int>& indices, std::vector<float>& dists, int nn)
+inline void FastGlobalReg::SearchFLANNTree(::flann::Index<::flann::L2<float>>* index, VectorXf& input, std::vector<int>& indices, std::vector<float>& dists, int nn)
 {
 	int rows_t = 1;
 	int dim = input.size();
@@ -545,13 +580,13 @@ inline void FastGlobalReg::SearchFLANNTree(flann::Index<flann::L2<float>>* index
 	query.resize(rows_t*dim);
 	for (int i = 0; i < dim; i++)
 		query[i] = input(i);
-	flann::Matrix<float> query_mat(&query[0], rows_t, dim);
+	::flann::Matrix<float> query_mat(&query[0], rows_t, dim);
 
 	indices.resize(rows_t*nn);
 	dists.resize(rows_t*nn);
-	flann::Matrix<int> indices_mat(&indices[0], rows_t, nn);
-	flann::Matrix<float> dists_mat(&dists[0], rows_t, nn);
+	::flann::Matrix<int> indices_mat(&indices[0], rows_t, nn);
+	::flann::Matrix<float> dists_mat(&dists[0], rows_t, nn);
 
-	index->knnSearch(query_mat, indices_mat, dists_mat, nn, flann::SearchParams(128));
+	index->knnSearch(query_mat, indices_mat, dists_mat, nn, ::flann::SearchParams(128));
 }
 #endif // !_FAST_GLOBAL_REIGISTRATION_H

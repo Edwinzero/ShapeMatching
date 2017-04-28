@@ -2,8 +2,7 @@
 #ifndef _CORRESPONDENCE_FINDING_H
 #define _CORRESPONDENCE_FINDING_H
 #include <SIFTmatching.h>
-#include <ThirdParty\GMS-Feature-Matcher-master\include\Header.h>
-#include <ThirdParty\GMS-Feature-Matcher-master\include\GMS.h>
+#include <GMSmatching.h>
 #include <Sensor.h>
 #include <Eigen_op.h>
 #include <cv_op.h>
@@ -48,7 +47,17 @@ namespace CORRES {
 
 
 	void Color3DCorrespondence(cv::Mat &src, cv::Mat &dst) {
-		//ExtractSIFTpointsRANSACFLANN(src, dst, corres_src, corres_dst, 400);
+		
+	}
+
+	void ColorDepthCorresMatchRaw(cv::Mat &depth, cv::Mat &color, 
+		std::vector<std::pair<cv::Point2f, cv::Point2f>> &corres, Sensor &sensor) {
+		
+	}
+
+	void ColorDepthCorresMatch(cv::Mat &mapped, cv::Mat &color,
+		std::vector<std::pair<cv::Point2f, cv::Point2f>> &corres, Sensor &sensor) {
+
 	}
 
 };

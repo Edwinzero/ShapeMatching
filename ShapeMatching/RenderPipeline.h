@@ -3,6 +3,11 @@
 #define _RENDER_PIPELINE_H
 #include <iostream>
 
+// Registration
+#include <FastGlobalRegistration.h>
+#include <ICP.h>
+
+
 #include <GL\glew.h>
 #include <GL\freeglut.h>
 #include "imgui.h"
@@ -10,6 +15,7 @@
 #include <camera.h>
 #include <GLobjects.h>
 #include <RenderUtils.h>
+
 #include <2Dcontent.h>
 
 #include <PointCloud.h>
@@ -19,13 +25,14 @@
 #include <GaussianNoise.h>
 
 // Feature
+#include <GMSmatching.h>
 #include <CorrespondenceFinding.h>
-// Registration
-#include <ICP.h>
-//#include <FastGlobalRegistration.h>
 
-#define MOCA 0
-#define BF   1
+
+#define MOCA	0
+#define BF		1
+#define PLY_REG 1
+#define TEXTURE 0
 
 using namespace std;
 unsigned int screenWidth = 1280;
@@ -160,7 +167,7 @@ void DrawScene2D() {
 	}
 }
 
-void DrawGLmem(GLuint &program, PointCloud &pc, GLmem &mem) {
+void DrawGLmem(GLuint &program, PointCloud &pc, GLmem &mem, Eigen::Vector3f color = Eigen::Vector3f(1.0f, 0.0f, 0.0f)) {
 	glEnable(GL_PROGRAM_POINT_SIZE);
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
@@ -173,7 +180,7 @@ void DrawGLmem(GLuint &program, PointCloud &pc, GLmem &mem) {
 		glUniformMatrix4fv(glGetUniformLocation(program, "proj"), 1, GL_FALSE, proj.data());
 		glUniformMatrix4fv(glGetUniformLocation(program, "view"), 1, GL_FALSE, view.data());
 		glUniformMatrix4fv(glGetUniformLocation(program, "model"), 1, GL_FALSE, pc.model.data());
-		glUniform3fv(glGetUniformLocation(program, "color"), 1, Eigen::Vector3f(1.0f, 0.0f, 0.0f).data());
+		glUniform3fv(glGetUniformLocation(program, "color"), 1, color.data());
 		glBindVertexArray(mem.vao);
 		glDrawArrays(GL_POINTS, 0, mem.m_numVerts);
 		glBindVertexArray(0);
@@ -218,16 +225,16 @@ void DrawScene3D() {
 			glMatrixMode(GL_MODELVIEW);
 			glPushMatrix();
 			if (Kpc_0.hasPoint) {
-				DrawGLmem(GLPointRenderProgram, Kpc_0, Kobject_0);
+				DrawGLmem(GLPointRenderProgram, Kpc_0, Kobject_0, Eigen::Vector3f(1.0f, 0.0f, 0.0f));
 			}			
 			if (Kpc_1.hasPoint) {
-				DrawGLmem(GLPointRenderProgram, Kpc_1, Kobject_1);
+				DrawGLmem(GLPointRenderProgram, Kpc_1, Kobject_1, Eigen::Vector3f(0.0f, 1.0f, 0.0f));
 			}
 			if (Kpc_2.hasPoint) {
-				DrawGLmem(GLPointRenderProgram, Kpc_2, Kobject_2);
+				DrawGLmem(GLPointRenderProgram, Kpc_2, Kobject_2, Eigen::Vector3f(0.0f, 0.0f, 1.0f));
 			}
 			if (Kpc_3.hasPoint) {
-				DrawGLmem(GLPointRenderProgram, Kpc_3, Kobject_3);
+				DrawGLmem(GLPointRenderProgram, Kpc_3, Kobject_3, Eigen::Vector3f(1.0f, 1.0f, 0.0f));
 			}
 			glMatrixMode(GL_MODELVIEW);
 			glPopMatrix();
@@ -245,7 +252,7 @@ void DrawScene3D() {
 			glMatrixMode(GL_MODELVIEW);
 			glPopMatrix();
 		}
-		if (0) { // ply registration
+		if (PLY_REG) { // ply registration
 			glEnable(GL_PROGRAM_POINT_SIZE);
 			glMatrixMode(GL_MODELVIEW);
 			glPushMatrix();
@@ -450,9 +457,7 @@ void CLImageProcess() {
 			sensors[1].cali_rgb.intr.IntrVec(), sensors[1].cali_rgb.extr,
 			(unsigned short*)depth1.ptr(), color1, res1, Kpc1.points);
 		ImgShow("CL RGBDmapping K1", res1, 512, 424);
-	}
-	// backproject
-	if (MOCA) {
+
 		clprocess.BackProjectPoints(sensors[0].cali_ir.intr.IntrVec(), sensors[0].dep_to_gl, (unsigned short*)depth0.ptr(), Kpc0.points, Kpc0.normals);
 		Kpc0.ScalePointData(50.0f);
 		CreateGLmem(Kobject0, Kpc0);
@@ -469,37 +474,37 @@ void CLImageProcess() {
 			(unsigned short*)depth_0.ptr(), color_0, res0, Kpc_0.points);
 		ImgShow("CL RGBDmapping K0", res0, 512, 424);
 
-		clprocess.DepthToRGBMapping(bfsensors[1].cali_ir.intr.IntrVec(), bfsensors[1].cali_ir.extr, bfsensors[1].dep_to_rgb,
-			bfsensors[1].cali_rgb.intr.IntrVec(), bfsensors[1].cali_rgb.extr,
-			(unsigned short*)depth_1.ptr(), color_1, res1, Kpc_1.points);
-		ImgShow("CL RGBDmapping K1", res1, 512, 424);
+		//clprocess.DepthToRGBMapping(bfsensors[1].cali_ir.intr.IntrVec(), bfsensors[1].cali_ir.extr, bfsensors[1].dep_to_rgb,
+		//	bfsensors[1].cali_rgb.intr.IntrVec(), bfsensors[1].cali_rgb.extr,
+		//	(unsigned short*)depth_1.ptr(), color_1, res1, Kpc_1.points);
+		//ImgShow("CL RGBDmapping K1", res1, 512, 424);
 
 		clprocess.DepthToRGBMapping(bfsensors[0].cali_ir.intr.IntrVec(), bfsensors[0].cali_ir.extr, bfsensors[0].dep_to_rgb,
 			bfsensors[0].cali_rgb.intr.IntrVec(), bfsensors[0].cali_rgb.extr,
 			(unsigned short*)depth_2.ptr(), color_2, res2, Kpc_2.points);
 		ImgShow("CL RGBDmapping K0", res2, 512, 424);
 
-		clprocess.DepthToRGBMapping(bfsensors[1].cali_ir.intr.IntrVec(), bfsensors[1].cali_ir.extr, bfsensors[1].dep_to_rgb,
-			bfsensors[1].cali_rgb.intr.IntrVec(), bfsensors[1].cali_rgb.extr,
-			(unsigned short*)depth_3.ptr(), color_3, res3, Kpc_3.points);
-		ImgShow("CL RGBDmapping K1", res3, 512, 424);
-	}
-	if (BF) {//shang
+		//clprocess.DepthToRGBMapping(bfsensors[1].cali_ir.intr.IntrVec(), bfsensors[1].cali_ir.extr, bfsensors[1].dep_to_rgb,
+		//	bfsensors[1].cali_rgb.intr.IntrVec(), bfsensors[1].cali_rgb.extr,
+		//	(unsigned short*)depth_3.ptr(), color_3, res3, Kpc_3.points);
+		//ImgShow("CL RGBDmapping K1", res3, 512, 424);
+
+
 		clprocess.BackProjectPointsShang(bfsensors[0].cali_ir.intr.IntrVec(), bfsensors[0].cali_ir.extr, (unsigned short*)depth_0.ptr(), Kpc_0.points, Kpc_0.normals);
 		Kpc_0.ScalePointData(50.0f);
 		CreateGLmem(Kobject_0, Kpc_0);
 
-		clprocess.BackProjectPointsShang(bfsensors[1].cali_ir.intr.IntrVec(), bfsensors[1].cali_ir.extr, (unsigned short*)depth_1.ptr(), Kpc_1.points, Kpc_1.normals);
-		Kpc_1.ScalePointData(50.0f);
-		CreateGLmem(Kobject_1, Kpc_1);
+		//clprocess.BackProjectPointsShang(bfsensors[1].cali_ir.intr.IntrVec(), bfsensors[1].cali_ir.extr, (unsigned short*)depth_1.ptr(), Kpc_1.points, Kpc_1.normals);
+		//Kpc_1.ScalePointData(50.0f);
+		//CreateGLmem(Kobject_1, Kpc_1);
 
 		clprocess.BackProjectPointsShang(bfsensors[0].cali_ir.intr.IntrVec(), bfsensors[0].cali_ir.extr, (unsigned short*)depth_2.ptr(), Kpc_2.points, Kpc_2.normals);
 		Kpc_2.ScalePointData(50.0f);
 		CreateGLmem(Kobject_2, Kpc_2);
 
-		clprocess.BackProjectPointsShang(bfsensors[1].cali_ir.intr.IntrVec(), bfsensors[1].cali_ir.extr, (unsigned short*)depth_3.ptr(), Kpc_3.points, Kpc_3.normals);
-		Kpc_3.ScalePointData(50.0f);
-		CreateGLmem(Kobject_3, Kpc_3);
+		//clprocess.BackProjectPointsShang(bfsensors[1].cali_ir.intr.IntrVec(), bfsensors[1].cali_ir.extr, (unsigned short*)depth_3.ptr(), Kpc_3.points, Kpc_3.normals);
+		//Kpc_3.ScalePointData(50.0f);
+		//CreateGLmem(Kobject_3, Kpc_3);
 	}
 
 	// feature matching
@@ -510,31 +515,27 @@ void CLImageProcess() {
 		//ExtractSIFTpointsFLANN(res1, res3, corres_src, corres_dst, 400);
 		//ExtractSIFTpointsRANSACFLANN(res1, res3, corres_src, corres_dst, 400);
 		//cv::waitKey(0);
+		GridMatch(res0, res2);
+		GenCorrespondenceFromGridMatch(res0, res2, corres0);
+		printf("[res0 , res2] coorespondence set size: %d\n", corres0.size());
 	}
 
 	// correspondence finding
 	{
 		// projective data
-		CORRES::ProjectiveCorresondence(Kpc_0.points, Kpc_0.normals, Kpc_2.points, Kpc_2.normals, corres0, bfsensors[0], bfsensors[0]);
-		CORRES::ProjectiveCorresondence(Kpc_1.points, Kpc_1.normals, Kpc_3.points, Kpc_3.normals, corres1, bfsensors[1], bfsensors[1]);
+		//CORRES::ProjectiveCorresondence(Kpc_0.points, Kpc_0.normals, Kpc_2.points, Kpc_2.normals, corres0, bfsensors[0], bfsensors[0]);
+		//CORRES::ProjectiveCorresondence(Kpc_1.points, Kpc_1.normals, Kpc_3.points, Kpc_3.normals, corres1, bfsensors[1], bfsensors[1]);
 	}
 }
 //=========================================================================
 //		Update
 //=========================================================================
-void Update(void) {
-	if (doFGR) {
-		//fgr.NormalizePoints();
-		//fgr.OptimizePairwise(false, 2, 0, 1);
-		//pc0.model = fgr.GetRes().inverse();
-		doFGR = false;
-	}
-
-	if (doICP) {
-		Eigen::Matrix3f rot = Eigen::Matrix3f::Identity();
-		Eigen::Vector3f trans = Eigen::Vector3f::Zero();
-		if (0) {
-			float rme = PointToPoint_ICP(Kpc_0.points, Kpc_2.points, corres0, rot, trans);
+void DoICP(PointCloud &src, PointCloud &dst, std::vector<std::pair<int, int>> &corres) {
+	Eigen::Matrix3f rot = Eigen::Matrix3f::Identity();
+	Eigen::Vector3f trans = Eigen::Vector3f::Zero();
+	if (0) {
+		if (corres.empty()) {
+			float rme = PointToPoint_ICP(src.points, dst.points, rot, trans);
 			std::cout << "[Point to Point SVD ICP] :: " << std::endl;
 			std::cout << rot << std::endl;
 			std::cout << trans << std::endl;
@@ -542,33 +543,84 @@ void Update(void) {
 			std::cout << std::endl;
 		}
 		else {
+			float rme = PointToPoint_ICP(src.points, dst.points, corres, rot, trans);
+			std::cout << "[Point to Point SVD ICP] :: " << std::endl;
+			std::cout << rot << std::endl;
+			std::cout << trans << std::endl;
+			std::cout << "rme : " << rme << std::endl;
+			std::cout << std::endl;
+		}
+		
+	}
+	else {
 
-			// update pose
-			std::cout << "[Point to Plane Iterative ICP] :: " << std::endl;
-			for (int i = 0; i < 15; i++) {
-				float rme = PointToPlaneIter_ICP(Kpc_0.points, Kpc_2.points, Kpc_2.normals, rot, trans);
+		// update pose
+		std::cout << "[Point to Plane Iterative ICP] :: " << std::endl;
+		for (int i = 0; i < 15; i++) {
+			float rme = PointToPoint_iterICP(src.points, dst.points, rot, trans);
 
-				if (i < 14) {
-					continue;
-				}
-
+			if (i < 14) {
 				std::cout << ">> Iter " << i << " ======" << std::endl;
-				std::cout << rot << std::endl;
-				std::cout << trans << std::endl;
-				std::cout << "rme : " << rme << std::endl;
-				std::cout << std::endl;
-				//std::cout << out_rot.determinant() << std::endl;
+				continue;
 			}
 
+			std::cout << ">> Iter " << i << " ======" << std::endl;
+			std::cout << rot << std::endl;
+			std::cout << trans << std::endl;
+			std::cout << "rme : " << rme << std::endl;
+			std::cout << std::endl;
+			//std::cout << out_rot.determinant() << std::endl;
 		}
-		//PointToPlane_ICP(pc0.points, pc1.points, pc1.normals, rot, trans, err);
-		ConstructMatEigenToEigen4(Kpc_1.model, rot, trans);
+
+	}
+	ConstructMatEigenToEigen4(src.model, rot, trans);
+}
+void DoFGR(PointCloud &src, PointCloud &dst, std::vector<std::pair<int, int>> &corres) {
+	FastGlobalReg fgr;
+	fgr.LoadPoints(src.points, dst.points);
+	fgr.LoadCorrespondence(corres);
+	fgr.NormalizePoints();
+	fgr.OptimizePairwise(false, 2, 0, 1);
+	double rme = fgr.rme();
+	std::cout << "[Fast Global Reg] " << std::endl;
+	std::cout << "rme : " << rme << std::endl;
+	std::cout << std::endl;
+	src.model = fgr.GetRes().inverse();
+}
+void DoFGRTestCorrectness(PointCloud &src, PointCloud &dst) {
+	FastGlobalReg fgr;
+	fgr.LoadPoints(src.points, dst.points);
+	fgr.LoadCorrespondence(src.points, 4);
+	fgr.NormalizePoints();
+	fgr.OptimizePairwise(false, 2, 0, 1);
+	double rme = fgr.rme();
+	std::cout << "[Fast Global Reg] " << std::endl;
+	std::cout << "rme : " << rme << std::endl;
+	std::cout << std::endl;
+	src.model = fgr.GetRes().inverse();
+}
+void DoReset(PointCloud &pc) {
+	Eigen::Matrix4f tmp = pc.model.inverse();
+	pc.model = tmp; // eigen mat cant assign to itself
+}
+
+void Update(void) {
+	if (doFGR) {
+		DoFGR(Kpc_0, Kpc_2, corres0);
+		DoFGRTestCorrectness(pc0, pc1);
+		doFGR = false;
+	}
+
+	if (doICP) {
+		DoICP(Kpc_0, Kpc_2, corres0);
+		std::vector<std::pair<int, int>> em;
+		DoICP(pc0, pc1, em);
 		doICP = false;
 	}
 
 	if (doReset) {
-		Eigen::Matrix4f tmp = pc0.model.inverse();
-		pc0.model = tmp; // eigen mat cant assign to itself
+		DoReset(Kpc_0);
+		DoReset(pc0);
 		doReset = false;
 	}
 
@@ -784,7 +836,7 @@ void Init_RenderScene(void) {
 		camera.radius = 100.0f;
 	}
 
-	if(0){
+	if(PLY_REG){
 		pc0.Init("Depth_0000.ply", "child0");
 		pc1.Init("Depth_0000.ply", "child1");
 		pc0.ScalePointData(50.0f);
@@ -793,10 +845,9 @@ void Init_RenderScene(void) {
 
 		CreateGLmem(object0, pc0);
 		CreateGLmem(object1, pc1);
+	}
 
-		//fgr.LoadPoints(pc0.points, pc1.points);
-		//fgr.LoadCorrespondence(pc0.points);
-
+	if (TEXTURE) {
 		PLYModel m_model("Data/textured_model.ply", 1, 1);
 		CreateGLmem(moca_model, m_model.positions, m_model.normals, m_model.colors);
 	}
@@ -863,34 +914,34 @@ void Init_Sensors(void) {
 	}
 	if(BF){ // sHANG
 		char filepath[64];
-		sprintf(filepath, "Data/BF/People0/K0/CPose%d_0.png", 1);
+		sprintf(filepath, "Data/BF/People1/K0/CPose%d_0.png", 1);
 		cv::Mat tmp0;
 		tmp0 = cv::imread(filepath, CV_LOAD_IMAGE_COLOR);
 		cv::undistort(tmp0, color_0, bfsensors[0].cali_rgb.intr.cameraMatrix, bfsensors[0].cali_rgb.intr.distCoeffs);
 
-		sprintf(filepath, "Data/BF/People0/K1/CPose%d_0.png", 1);
+		sprintf(filepath, "Data/BF/People1/K1/CPose%d_0.png", 1);
 		cv::Mat tmp1;
 		tmp1 = cv::imread(filepath, CV_LOAD_IMAGE_COLOR);
 		cv::undistort(tmp1, color_1, bfsensors[1].cali_rgb.intr.cameraMatrix, bfsensors[1].cali_rgb.intr.distCoeffs);
 
-		sprintf(filepath, "Data/BF/People0/K0/CPose%d_0.png", 2);
+		sprintf(filepath, "Data/BF/People1/K0/CPose%d_0.png", 2);
 		tmp0 = cv::imread(filepath, CV_LOAD_IMAGE_COLOR);
 		cv::undistort(tmp0, color_2, bfsensors[0].cali_rgb.intr.cameraMatrix, bfsensors[0].cali_rgb.intr.distCoeffs);
 
-		sprintf(filepath, "Data/BF/People0/K1/CPose%d_0.png", 2);
+		sprintf(filepath, "Data/BF/People1/K1/CPose%d_0.png", 2);
 		tmp1 = cv::imread(filepath, CV_LOAD_IMAGE_COLOR);
 		cv::undistort(tmp1, color_3, bfsensors[1].cali_rgb.intr.cameraMatrix, bfsensors[1].cali_rgb.intr.distCoeffs);
 
-		sprintf(filepath, "Data/BF/People0/K0/Pose%d_0.png", 1);
+		sprintf(filepath, "Data/BF/People1/K0/Pose%d_0.png", 1);
 		depth_0 = cv::imread(filepath, CV_LOAD_IMAGE_ANYDEPTH);
 
-		sprintf(filepath, "Data/BF/People0/K1/Pose%d_0.png", 1);
+		sprintf(filepath, "Data/BF/People1/K1/Pose%d_0.png", 1);
 		depth_1 = cv::imread(filepath, CV_LOAD_IMAGE_ANYDEPTH);
 
-		sprintf(filepath, "Data/BF/People0/K0/Pose%d_0.png", 2);
+		sprintf(filepath, "Data/BF/People1/K0/Pose%d_0.png", 2);
 		depth_2 = cv::imread(filepath, CV_LOAD_IMAGE_ANYDEPTH);
 
-		sprintf(filepath, "Data/BF/People0/K1/Pose%d_0.png", 2);
+		sprintf(filepath, "Data/BF/People1/K1/Pose%d_0.png", 2);
 		depth_3 = cv::imread(filepath, CV_LOAD_IMAGE_ANYDEPTH);
 	}
 	// bilaterial filter for depth image

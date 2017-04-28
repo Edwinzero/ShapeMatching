@@ -29,6 +29,7 @@ public:
 	cl::Kernel			kn_p2n; // if compute normal from view space will add work to transformation normal to g space
 
 	cl::Kernel			kn_d2c; // depth->color
+	cl::Kernel			kn_d2c2;  // map with id buf
 
 	// mem
 	cl::Mem				mem_d; // depth map
@@ -38,6 +39,7 @@ public:
 
 	cl::Mem				mem_c; // color map
 	cl::Mem				mem_map; // mapped buffer
+	cl::Mem				mem_mapID; // mapped pixel coord buffer
 
 public:
 	void Create(void) {
@@ -55,6 +57,7 @@ public:
 
 		mem_c.CreateBuffer(context, CL_MEM_READ_WRITE, color_img_size.area() * sizeof(cl_uchar4));
 		mem_map.CreateBuffer(context, CL_MEM_READ_WRITE, depth_img_size.area() * sizeof(cl_uchar4));
+		mem_mapID.CreateBuffer(context, CL_MEM_READ_WRITE, depth_img_size.area() * 2 * sizeof(cl_int2));
 	}
 
 
@@ -71,6 +74,7 @@ public:
 		kn_p2n.Create(program, "point_to_normal");
 
 		kn_d2c.Create(program, "depth_to_color");
+		kn_d2c2.Create(program, "depth_to_color2");
 	}
 
 	void Clear(void) {
@@ -194,9 +198,11 @@ public:
 		cq.NDRangeKernel2((kn_d2c << mem_p, mem_c, mem_map, depth_img_size, color_img_size, DK, CK, M), cl::size2(2048, 2048), local_size2);
 		cq.Finish();
 		std::vector<uchar> mapbuf(depth_img_size.area() * 4);
+		std::vector<int> mapbufID(depth_img_size.area() * 2);
 		points.resize(depth_img_size.area());
 		cq.ReadBuffer(mem_w, CL_TRUE, points);
 		cq.ReadBuffer(mem_map, CL_TRUE, mapbuf);
+		//cq.ReadBuffer(mem_mapID, CL_TRUE, mapbufID);
 
 		res = cv::Mat(cv::Size(512, 424), CV_8UC3, cv::Scalar(0, 0, 0));
 		for (int y = 0; y < res.rows; y++) {
@@ -207,6 +213,18 @@ public:
 				res.at<cv::Vec3b>(y, x)[2] = mapbuf[id + 2]; // R
 			}
 		}
+
+		/*
+		cv::Mat test = cv::Mat(cv::Size(512, 424), CV_8UC3, cv::Scalar(0, 0, 0));
+		for (int i = 0; i < mapbufID.size()/2; i++) {
+			int dID = mapbufID[2 * i];
+			int cID = mapbufID[2 * i + 1];
+			if (dID >= 0 && cID >= 0 && dID < 217088 && cID < 2073600) {
+				test.at<cv::Vec3b>(dID) = color.at<cv::Vec3b>(cID);
+			}
+		}
+		ImgShow("test mapbufID", test, 512, 424);
+		//*/
 	}
 
 
