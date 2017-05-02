@@ -6,40 +6,54 @@
 #include <Sensor.h>
 #include <Eigen_op.h>
 #include <cv_op.h>
+#include <opencv2\core\eigen.hpp>
 
 namespace CORRES {
 	// corres ( srcID, dstID )
 	void ProjectiveCorresondence(std::vector<Eigen::Vector4f> &srcP, std::vector<Eigen::Vector4f> &srcN, std::vector<Eigen::Vector4f> &dstP, std::vector<Eigen::Vector4f> &dstN, 
-		std::vector<pair<int, int>> &corres, Sensor &sensrc, Sensor &sendst) {
+		Eigen::Matrix4f &msrc, Eigen::Matrix4f &mdst,
+		std::vector<pair<int, int>> &corres, Sensor &sensrc, float scale = 1.0f) {
 		corres.clear();
-		cv::Mat src2dst = sendst.dep_to_gl.inv() * sensrc.dep_to_gl; // wrong.....
-		cv::Mat intr = sendst.cali_ir.intr.IntrVec();
+		cv::Mat intr = sensrc.cali_ir.intr.IntrVec();
 		float fx = intr.at<double>(0);
 		float fy = intr.at<double>(1);
 		float cx = intr.at<double>(2);
 		float cy = intr.at<double>(3);
+
+		// for each pixel in depthP
 		for (int y = 0; y < 424; y++) {
 			for (int x = 0; x < 512; x++) {
-				cv::Point3f src(srcP[y * 512 + x](0), srcP[y * 512 + x](1), srcP[y * 512 + x](2)); // world space
-				cv::Point3f vsrc = src2dst * src;
-				vsrc.x /= vsrc.z;
-				vsrc.y /= vsrc.z;
-				vsrc.x = vsrc.x * fx + cx;
-				vsrc.y = vsrc.y * fy + cy;
-				if (vsrc.x < 0 || vsrc.x >= 512 || vsrc.y < 0 || vsrc.y >= 424) {
+				int sid = y * 512 + x;
+				cv::Point3f src(srcP[sid](0), srcP[sid](1), srcP[sid](2)); // world space
+				Eigen::Vector4f ev = msrc * srcP[sid];
+				cv::Point3f vsrc = cv::Point3f(ev(0), ev(1), ev(2));
+				int px = (vsrc.x / vsrc.z) * fx + cx;
+				int py = (vsrc.y / vsrc.z) * fy + cy;
+				if (px < 0 || px >= 512 || py < 0 || py >= 424) {
 					continue;
 				}
-				int id = (int)(vsrc.y) * 512 + (int)(vsrc.x);
-				cv::Point3f vdst(dstP[id](0), dstP[id](1), dstP[id](2));	
-				// normal not store to buffer yet TODO
-				cv::Point3f ndst(dstN[id](0), dstN[id](1), dstN[id](2));	// already in world space			
-				cv::Point3f nsrc(srcN[y * 512 + x](0), srcN[y * 512 + x](1), srcN[y * 512 + x](2));
-				
-				float dThres = 0.8f;
-				float nThres = 0.3f;
-				//printf("mag: %f,  dot: %f \n", magnitude(src - vdst), abs(ndst.dot(nsrc)));
-				if (magnitude(src - vdst)*0.001f < dThres && abs(ndst.dot(nsrc)) < nThres) {
-					corres.push_back(std::pair<int, int>(y * 512 + x, id));
+				// if p is in vertex map Vnew
+				int did = py * 512 + px;
+				// vcur = Tcur * dstP
+				ev = mdst * dstP[did];
+				cv::Point3f vcur(ev(0), ev(1), ev(2));
+				// ncur = Rcur * dstN
+				Eigen::Matrix3f R = mdst.block<3, 3>(0, 0);				
+				Eigen::Vector3f en = R * Eigen::Vector3f(dstN[did](0), dstN[did](1), dstN[did](2));
+				//cv::Point3f ncur = normalize(cv::Point3f(en(0), en(1), en(2)));
+				cv::Point3f ncur = normalize(cv::Point3f(dstN[did](0), dstN[did](1), dstN[did](2)));
+				// if vcur depth out of range of interest
+				if (vcur.z < 0.05f*scale || vcur.z > 2.0f*scale) {
+					continue;
+				}
+				//std::cout << "normal of dstN: " << dstN[did] << std::endl;
+				//std::cout << "normal of srcN: " << srcN[sid] << std::endl;
+				cv::Point3f nsrc = normalize(cv::Point3f(srcN[sid](0), srcN[sid](1), srcN[sid](2)));;
+				float dThres = 0.25f*scale;
+				float nThres = 0.65f;
+				printf("mag: %f,  dot: %f \n", magnitude(src - vcur), abs(ncur.dot(nsrc)));
+				if (magnitude(src - vcur) < dThres && abs(ncur.dot(nsrc)) < nThres) {
+					corres.push_back(std::pair<int, int>(sid, did));
 				}
 			}
 		}

@@ -24,7 +24,7 @@ __kernel void depth_to_point(__global unsigned short* depth, __global float3 *po
 	// get uv, d
 	int2 uv = (int2)(x, y);
 	uv = clamp(uv, (int2)(0), dim-1);
-	float d = convert_float_rtz(depth[y * dim.x + x]) * 0.001;
+	float d = convert_float_rtz(depth[id]) * 0.001;
 
 #if 1
 	if (d < 0.050 || d > 2.0f) {

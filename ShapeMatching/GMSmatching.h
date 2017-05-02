@@ -37,6 +37,7 @@ void GridMatch(cv::Mat &img1, cv::Mat &img2) {
 
 
 void GenCorrespondenceFromGridMatch(cv::Mat &img1, cv::Mat &img2, std::vector<std::pair<int, int>> &corres) {
+	corres.clear();
 	vector<cv::KeyPoint> kp1, kp2;
 	cv::Mat d1, d2;
 	vector<cv::DMatch> matches_all, matches_grid;

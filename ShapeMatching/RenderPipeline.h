@@ -6,6 +6,7 @@
 // Registration
 #include <FastGlobalRegistration.h>
 #include <ICP.h>
+#include <pcl\correspondence.h>
 
 
 #include <GL\glew.h>
@@ -53,6 +54,7 @@ std::vector<Sensor> sensors;
 PointCloud pc0, pc1;
 GLmem object0, object1;
 //FastGlobalReg fgr;
+// src dst (register all other frame to initial pose Kpc_0, Kpc_1 here)
 std::vector<std::pair<int, int>> corres0, corres1;
 bool doFGR = false;				// key: R
 bool doICP = false;				// key: E
@@ -517,14 +519,15 @@ void CLImageProcess() {
 		//cv::waitKey(0);
 		GridMatch(res0, res2);
 		GenCorrespondenceFromGridMatch(res0, res2, corres0);
-		printf("[res0 , res2] coorespondence set size: %d\n", corres0.size());
+		printf("[res0 , res2] :: << GMS filter >> coorespondence set size: %d\n", corres0.size());
 	}
 
 	// correspondence finding
 	{
-		// projective data
-		//CORRES::ProjectiveCorresondence(Kpc_0.points, Kpc_0.normals, Kpc_2.points, Kpc_2.normals, corres0, bfsensors[0], bfsensors[0]);
-		//CORRES::ProjectiveCorresondence(Kpc_1.points, Kpc_1.normals, Kpc_3.points, Kpc_3.normals, corres1, bfsensors[1], bfsensors[1]);
+		// projective data corres
+		CORRES::ProjectiveCorresondence(Kpc_0.points, Kpc_0.normals, Kpc_2.points, Kpc_2.normals, Kpc_0.model, Kpc_2.model, corres0, bfsensors[0], 50.0f);
+		printf("[res0, res2] :: [Projective corres] :: set size is %d\n", corres0.size());
+		//CORRES::ProjectiveCorresondence(Kpc_1.points, Kpc_1.normals, Kpc_3.points, Kpc_3.normals, corres1, bfsensors[1]);
 	}
 }
 //=========================================================================
@@ -590,7 +593,7 @@ void DoFGR(PointCloud &src, PointCloud &dst, std::vector<std::pair<int, int>> &c
 void DoFGRTestCorrectness(PointCloud &src, PointCloud &dst) {
 	FastGlobalReg fgr;
 	fgr.LoadPoints(src.points, dst.points);
-	fgr.LoadCorrespondence(src.points, 4);
+	fgr.LoadCorrespondence(src.points, 40);
 	fgr.NormalizePoints();
 	fgr.OptimizePairwise(false, 2, 0, 1);
 	double rme = fgr.rme();

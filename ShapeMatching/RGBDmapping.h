@@ -199,8 +199,8 @@ public:
 		cq.Finish();
 		std::vector<uchar> mapbuf(depth_img_size.area() * 4);
 		std::vector<int> mapbufID(depth_img_size.area() * 2);
-		points.resize(depth_img_size.area());
-		cq.ReadBuffer(mem_w, CL_TRUE, points);
+		//points.resize(depth_img_size.area());
+		//cq.ReadBuffer(mem_w, CL_TRUE, points);
 		cq.ReadBuffer(mem_map, CL_TRUE, mapbuf);
 		//cq.ReadBuffer(mem_mapID, CL_TRUE, mapbufID);
 
