@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #ifndef _RENDER_PIPELINE_H
 #define _RENDER_PIPELINE_H
 #include <iostream>
@@ -26,6 +26,7 @@
 #include <GaussianNoise.h>
 
 // Feature
+#include <SIFTmatching.h>
 #include <GMSmatching.h>
 #include <CorrespondenceFinding.h>
 
@@ -59,6 +60,12 @@ std::vector<std::pair<int, int>> corres0, corres1;
 bool doFGR = false;				// key: R
 bool doICP = false;				// key: E
 bool doReset = false;			// key: T
+bool doRegTest = false;         // key: F
+
+int modelID = -1;
+bool showK0 = false;			// Key: 9
+bool showK1 = false;			// Key: 0
+bool showDemo = false;			// Key: 8
 
 // PointCloud Rendering
 GLmem moca_model;
@@ -82,13 +89,118 @@ ImageTex depthTex;
 GLfbo imageCanvas;
 GLmem canvas;
 
-// CL programs]
+// CL programs
 bool reComplieKernel = false;
 // GL programs
 bool reComplieShader = false;
 GLuint GLPointRenderProgram;
 GLuint GLMocaPointRenderProgram;
 GLuint GLGradientProgram;
+
+vector<float> pose0_2t0 = { 0.947342f, 0.010327f, -0.320058f, 18.586237f,
+							-0.009819f, 0.999947f, 0.003200f, -0.223906f,
+							0.320074f, 0.000112f, 0.947393f, 4.657801f,
+							0.000000f, 0.000000f, 0.000000f, 1.000000f };
+vector<float> pose0_3t1 = { 0.946434f, 0.017699f, -0.322412f, 18.790529f,
+							-0.016917f, 0.999843f, 0.005228f, -0.206227f,
+							0.322454f, 0.000507f, 0.946585f, 4.098423f,
+							0.000000f, 0.000000f, 0.000000f, 1.000000f };
+
+vector<float> pose1_2t0 = { 0.981160f, 0.003028f, 0.193175f, -8.695971f,
+						   -0.003047f, 0.999995f, -0.000202f, -0.004200f,
+						   -0.193175f, -0.000391f, 0.981164f, 0.623203f,
+							0.000000f, 0.000000f, 0.000000f, 1.000000f };
+vector<float> pose1_3t1 = { 0.981019f, -0.011783f, 0.193551f, -7.953295f,
+							0.011818f, 0.999930f, 0.000972f, -0.079097f,
+							-0.193549f, 0.001333f, 0.981090f, 0.924206f,
+							0.000000f, 0.000000f, 0.000000f, 1.000000f };
+
+vector<float> pose2_2t0 = { 0.933808f, 0.013725f, -0.357512f, 16.788931f,
+							-0.013109f, 0.999906f, 0.004149f, -0.159492f,
+							0.357535f, 0.000813f, 0.933900f, 4.308386f,
+							0.000000f, 0.000000f, 0.000000f, 1.000000f };
+vector<float> pose2_3t1 = {	0.926306f, 0.007443f, -0.376698f, 18.173956f,
+							-0.008313f, 0.999965f, -0.000683f, 0.079684f,
+							0.376679f, 0.003764f, 0.926336f, 3.903884f,
+							0.000000f, 0.000000f, 0.000000f, 1.000000f };
+
+Eigen::Matrix4f createMat4(vector<float> &val) {
+	Eigen::Matrix4f res = Eigen::Matrix4f::Identity();
+	res <<  val[0], val[1], val[2], val[3],
+			val[4], val[5], val[6], val[7],
+			val[8], val[9], val[10], val[11],
+			val[12], val[13], val[14], val[15];
+	return res;
+}
+
+void OpenImageFileToBuffer(std::string &pose) {
+	char filepath[64];
+	sprintf(filepath, "Data/BF/%s/K0/CPose%d_0.png", pose.c_str(), 1);
+	cv::Mat tmp0;
+	tmp0 = cv::imread(filepath, CV_LOAD_IMAGE_COLOR);
+	cv::undistort(tmp0, color_0, bfsensors[0].cali_rgb.intr.cameraMatrix, bfsensors[0].cali_rgb.intr.distCoeffs);
+
+	sprintf(filepath, "Data/BF/%s/K1/CPose%d_0.png", pose.c_str(), 1);
+	cv::Mat tmp1;
+	tmp1 = cv::imread(filepath, CV_LOAD_IMAGE_COLOR);
+	cv::undistort(tmp1, color_1, bfsensors[1].cali_rgb.intr.cameraMatrix, bfsensors[1].cali_rgb.intr.distCoeffs);
+
+	sprintf(filepath, "Data/BF/%s/K0/CPose%d_0.png", pose.c_str(), 2);
+	tmp0 = cv::imread(filepath, CV_LOAD_IMAGE_COLOR);
+	cv::undistort(tmp0, color_2, bfsensors[0].cali_rgb.intr.cameraMatrix, bfsensors[0].cali_rgb.intr.distCoeffs);
+
+	sprintf(filepath, "Data/BF/%s/K1/CPose%d_0.png", pose.c_str(), 2);
+	tmp1 = cv::imread(filepath, CV_LOAD_IMAGE_COLOR);
+	cv::undistort(tmp1, color_3, bfsensors[1].cali_rgb.intr.cameraMatrix, bfsensors[1].cali_rgb.intr.distCoeffs);
+
+	sprintf(filepath, "Data/BF/%s/K0/Pose%d_0.png", pose.c_str(), 1);
+	depth_0 = cv::imread(filepath, CV_LOAD_IMAGE_ANYDEPTH);
+
+	sprintf(filepath, "Data/BF/%s/K1/Pose%d_0.png", pose.c_str(), 1);
+	depth_1 = cv::imread(filepath, CV_LOAD_IMAGE_ANYDEPTH);
+
+	sprintf(filepath, "Data/BF/%s/K0/Pose%d_0.png", pose.c_str(), 2);
+	depth_2 = cv::imread(filepath, CV_LOAD_IMAGE_ANYDEPTH);
+
+	sprintf(filepath, "Data/BF/%s/K1/Pose%d_0.png", pose.c_str(), 2);
+	depth_3 = cv::imread(filepath, CV_LOAD_IMAGE_ANYDEPTH);
+}
+
+void SaveToPlyfile(const char* filename, std::vector<Eigen::Vector4f> &points, std::vector<Eigen::Vector4f> &normals) {
+	PLYModel model;
+	model.isMesh = 0;
+	model.ifNormal = 0;
+	model.ifColor = 0;
+	if (points.empty()) {
+		printf("[SAVE PLY] :: points buffer is empty... \n");
+		return;
+	}
+
+	int pointsize = points.size();
+	model.vertexCount = pointsize;
+	model.positions.resize(pointsize);
+	for (int i = 0; i < pointsize; i++) {
+		float x = points[i](0);
+		float y = points[i](1);
+		float z = points[i](2);
+		model.positions[i] = glm::vec3(x, y, z);
+	}
+
+	if (!normals.empty()) {
+		model.ifNormal = 1;
+		int normalsize = normals.size();
+		model.normals.resize(normalsize);
+		for (int i = 0; i < pointsize; i++) {
+			float x = normals[i](0);
+			float y = normals[i](1);
+			float z = normals[i](2);
+			model.normals[i] = glm::vec3(x, y, z);
+		}
+	}
+	model.faceCount = 0;
+	model.PLYWrite(filename, model.ifNormal, model.ifColor);
+	model.FreeMemory();
+}
 
 //================================
 // default draw event
@@ -226,18 +338,23 @@ void DrawScene3D() {
 			glEnable(GL_PROGRAM_POINT_SIZE);
 			glMatrixMode(GL_MODELVIEW);
 			glPushMatrix();
-			if (Kpc_0.hasPoint) {
-				DrawGLmem(GLPointRenderProgram, Kpc_0, Kobject_0, Eigen::Vector3f(1.0f, 0.0f, 0.0f));
+			if (showK0) {
+				if (Kpc_0.hasPoint) {
+					DrawGLmem(GLPointRenderProgram, Kpc_0, Kobject_0, Eigen::Vector3f(1.0f, 0.0f, 0.0f));
+				}
+				if (Kpc_2.hasPoint) {
+					DrawGLmem(GLPointRenderProgram, Kpc_2, Kobject_2, Eigen::Vector3f(0.0f, 0.0f, 1.0f));
+				}
+			}
+			
+			if (showK1) {
+				if (Kpc_1.hasPoint) {
+					DrawGLmem(GLPointRenderProgram, Kpc_1, Kobject_1, Eigen::Vector3f(0.0f, 1.0f, 0.0f));
+				}
+				if (Kpc_3.hasPoint) {
+					DrawGLmem(GLPointRenderProgram, Kpc_3, Kobject_3, Eigen::Vector3f(1.0f, 1.0f, 0.0f));
+				}
 			}			
-			if (Kpc_1.hasPoint) {
-				DrawGLmem(GLPointRenderProgram, Kpc_1, Kobject_1, Eigen::Vector3f(0.0f, 1.0f, 0.0f));
-			}
-			if (Kpc_2.hasPoint) {
-				DrawGLmem(GLPointRenderProgram, Kpc_2, Kobject_2, Eigen::Vector3f(0.0f, 0.0f, 1.0f));
-			}
-			if (Kpc_3.hasPoint) {
-				DrawGLmem(GLPointRenderProgram, Kpc_3, Kobject_3, Eigen::Vector3f(1.0f, 1.0f, 0.0f));
-			}
 			glMatrixMode(GL_MODELVIEW);
 			glPopMatrix();
 		}
@@ -254,7 +371,7 @@ void DrawScene3D() {
 			glMatrixMode(GL_MODELVIEW);
 			glPopMatrix();
 		}
-		if (PLY_REG) { // ply registration
+		if (PLY_REG && showDemo) { // ply registration
 			glEnable(GL_PROGRAM_POINT_SIZE);
 			glMatrixMode(GL_MODELVIEW);
 			glPushMatrix();
@@ -471,42 +588,54 @@ void CLImageProcess() {
 
 
 	if (BF) {// shang
-		clprocess.DepthToRGBMapping(bfsensors[0].cali_ir.intr.IntrVec(), bfsensors[0].cali_ir.extr, bfsensors[0].dep_to_rgb,
-			bfsensors[0].cali_rgb.intr.IntrVec(), bfsensors[0].cali_rgb.extr,
-			(unsigned short*)depth_0.ptr(), color_0, res0, Kpc_0.points);
-		ImgShow("CL RGBDmapping K0", res0, 512, 424);
-
-		//clprocess.DepthToRGBMapping(bfsensors[1].cali_ir.intr.IntrVec(), bfsensors[1].cali_ir.extr, bfsensors[1].dep_to_rgb,
-		//	bfsensors[1].cali_rgb.intr.IntrVec(), bfsensors[1].cali_rgb.extr,
-		//	(unsigned short*)depth_1.ptr(), color_1, res1, Kpc_1.points);
-		//ImgShow("CL RGBDmapping K1", res1, 512, 424);
-
-		clprocess.DepthToRGBMapping(bfsensors[0].cali_ir.intr.IntrVec(), bfsensors[0].cali_ir.extr, bfsensors[0].dep_to_rgb,
-			bfsensors[0].cali_rgb.intr.IntrVec(), bfsensors[0].cali_rgb.extr,
-			(unsigned short*)depth_2.ptr(), color_2, res2, Kpc_2.points);
-		ImgShow("CL RGBDmapping K0", res2, 512, 424);
-
-		//clprocess.DepthToRGBMapping(bfsensors[1].cali_ir.intr.IntrVec(), bfsensors[1].cali_ir.extr, bfsensors[1].dep_to_rgb,
-		//	bfsensors[1].cali_rgb.intr.IntrVec(), bfsensors[1].cali_rgb.extr,
-		//	(unsigned short*)depth_3.ptr(), color_3, res3, Kpc_3.points);
-		//ImgShow("CL RGBDmapping K1", res3, 512, 424);
+			clprocess.DepthToRGBMapping(bfsensors[0].cali_ir.intr.IntrVec(), bfsensors[0].cali_ir.extr, bfsensors[0].dep_to_rgb,
+				bfsensors[0].cali_rgb.intr.IntrVec(), bfsensors[0].cali_rgb.extr,
+				(unsigned short*)depth_0.ptr(), color_0, res0, Kpc_0.points);
+			ImgShow("CL RGBDmapping K0", res0, 512, 424);
 
 
-		clprocess.BackProjectPointsShang(bfsensors[0].cali_ir.intr.IntrVec(), bfsensors[0].cali_ir.extr, (unsigned short*)depth_0.ptr(), Kpc_0.points, Kpc_0.normals);
-		Kpc_0.ScalePointData(50.0f);
-		CreateGLmem(Kobject_0, Kpc_0);
+			clprocess.DepthToRGBMapping(bfsensors[0].cali_ir.intr.IntrVec(), bfsensors[0].cali_ir.extr, bfsensors[0].dep_to_rgb,
+				bfsensors[0].cali_rgb.intr.IntrVec(), bfsensors[0].cali_rgb.extr,
+				(unsigned short*)depth_2.ptr(), color_2, res2, Kpc_2.points);
+			ImgShow("CL RGBDmapping K0", res2, 512, 424);
 
-		//clprocess.BackProjectPointsShang(bfsensors[1].cali_ir.intr.IntrVec(), bfsensors[1].cali_ir.extr, (unsigned short*)depth_1.ptr(), Kpc_1.points, Kpc_1.normals);
-		//Kpc_1.ScalePointData(50.0f);
-		//CreateGLmem(Kobject_1, Kpc_1);
+			clprocess.BackProjectPointsShang(bfsensors[0].cali_ir.intr.IntrVec(), bfsensors[0].cali_ir.extr, (unsigned short*)depth_0.ptr(), Kpc_0.points, Kpc_0.normals);
+			Kpc_0.ScalePointData(50.0f);
+			CreateGLmem(Kobject_0, Kpc_0);
 
-		clprocess.BackProjectPointsShang(bfsensors[0].cali_ir.intr.IntrVec(), bfsensors[0].cali_ir.extr, (unsigned short*)depth_2.ptr(), Kpc_2.points, Kpc_2.normals);
-		Kpc_2.ScalePointData(50.0f);
-		CreateGLmem(Kobject_2, Kpc_2);
+			//SaveToPlyfile("pose1_0.ply", Kpc_0.points, Kpc_0.normals);
 
-		//clprocess.BackProjectPointsShang(bfsensors[1].cali_ir.intr.IntrVec(), bfsensors[1].cali_ir.extr, (unsigned short*)depth_3.ptr(), Kpc_3.points, Kpc_3.normals);
-		//Kpc_3.ScalePointData(50.0f);
-		//CreateGLmem(Kobject_3, Kpc_3);
+			clprocess.BackProjectPointsShang(bfsensors[0].cali_ir.intr.IntrVec(), bfsensors[0].cali_ir.extr, (unsigned short*)depth_2.ptr(), Kpc_2.points, Kpc_2.normals);
+			Kpc_2.ScalePointData(50.0f);
+			CreateGLmem(Kobject_2, Kpc_2);
+
+			//SaveToPlyfile("pose1_2.ply", Kpc_2.points, Kpc_2.normals);
+		
+		
+			clprocess.DepthToRGBMapping(bfsensors[1].cali_ir.intr.IntrVec(), bfsensors[1].cali_ir.extr, bfsensors[1].dep_to_rgb,
+				bfsensors[1].cali_rgb.intr.IntrVec(), bfsensors[1].cali_rgb.extr,
+				(unsigned short*)depth_1.ptr(), color_1, res1, Kpc_1.points);
+			ImgShow("CL RGBDmapping K1", res1, 512, 424);
+
+
+			clprocess.DepthToRGBMapping(bfsensors[1].cali_ir.intr.IntrVec(), bfsensors[1].cali_ir.extr, bfsensors[1].dep_to_rgb,
+				bfsensors[1].cali_rgb.intr.IntrVec(), bfsensors[1].cali_rgb.extr,
+				(unsigned short*)depth_3.ptr(), color_3, res3, Kpc_3.points);
+			ImgShow("CL RGBDmapping K1", res3, 512, 424);
+
+
+			clprocess.BackProjectPointsShang(bfsensors[1].cali_ir.intr.IntrVec(), bfsensors[1].cali_ir.extr, (unsigned short*)depth_1.ptr(), Kpc_1.points, Kpc_1.normals);
+			Kpc_1.ScalePointData(50.0f);
+			CreateGLmem(Kobject_1, Kpc_1);
+
+			//SaveToPlyfile("pose1_1.ply", Kpc_1.points, Kpc_1.normals);
+
+			clprocess.BackProjectPointsShang(bfsensors[1].cali_ir.intr.IntrVec(), bfsensors[1].cali_ir.extr, (unsigned short*)depth_3.ptr(), Kpc_3.points, Kpc_3.normals);
+			Kpc_3.ScalePointData(50.0f);
+			CreateGLmem(Kobject_3, Kpc_3);
+
+			//SaveToPlyfile("pose1_3.ply", Kpc_3.points, Kpc_3.normals);
+		
 	}
 
 	// feature matching
@@ -517,16 +646,24 @@ void CLImageProcess() {
 		//ExtractSIFTpointsFLANN(res1, res3, corres_src, corres_dst, 400);
 		//ExtractSIFTpointsRANSACFLANN(res1, res3, corres_src, corres_dst, 400);
 		//cv::waitKey(0);
-		GridMatch(res0, res2);
-		GenCorrespondenceFromGridMatch(res0, res2, corres0);
-		printf("[res0 , res2] :: << GMS filter >> coorespondence set size: %d\n", corres0.size());
+		//GridMatch(res0, res2);
+		//GridMatch(color_0, color_2);
+		
+			GenCorrespondenceFromGridMatch(res0, res2, corres0);
+			printf("[res0 , res2] :: << GMS filter >> coorespondence set size: %d\n", corres0.size());
+		
+		
+			GenCorrespondenceFromGridMatch(res1, res3, corres1);
+			printf("[res1 , res3] :: << GMS filter >> coorespondence set size: %d\n", corres1.size());
+		
+		
 	}
 
 	// correspondence finding
 	{
 		// projective data corres
-		CORRES::ProjectiveCorresondence(Kpc_0.points, Kpc_0.normals, Kpc_2.points, Kpc_2.normals, Kpc_0.model, Kpc_2.model, corres0, bfsensors[0], 50.0f);
-		printf("[res0, res2] :: [Projective corres] :: set size is %d\n", corres0.size());
+		//CORRES::ProjectiveCorresondence(Kpc_0.points, Kpc_0.normals, Kpc_2.points, Kpc_2.normals, Kpc_0.model, Kpc_2.model, corres0, bfsensors[0], 50.0f);
+		//printf("[res0, res2] :: [Projective corres] :: set size is %d\n", corres0.size());
 		//CORRES::ProjectiveCorresondence(Kpc_1.points, Kpc_1.normals, Kpc_3.points, Kpc_3.normals, corres1, bfsensors[1]);
 	}
 }
@@ -621,8 +758,37 @@ void Update(void) {
 		doICP = false;
 	}
 
+	if (doRegTest) {
+		if (modelID == 0) {
+			if (showK0) {
+				Kpc_2.model = createMat4(pose0_2t0);
+			}
+			if (showK1) {
+				Kpc_3.model = createMat4(pose0_3t1);
+			}
+		}
+		if (modelID == 1) {
+			if (showK0) {
+				Kpc_2.model = createMat4(pose1_2t0);
+			}
+			if (showK1) {
+				Kpc_3.model = createMat4(pose1_3t1);
+			}
+		}
+		if (modelID == 2) {
+			if (showK0) {
+				Kpc_2.model = createMat4(pose2_2t0);
+			}
+			if (showK1) {
+				Kpc_3.model = createMat4(pose2_3t1);
+			}
+		}
+		doRegTest = false;
+	}
+
 	if (doReset) {
-		DoReset(Kpc_0);
+		DoReset(Kpc_2);
+		DoReset(Kpc_3);
 		DoReset(pc0);
 		doReset = false;
 	}
@@ -669,10 +835,6 @@ bool keyboardEvent(unsigned char nChar, int nX, int nY)
 	if (nChar == '[') {
 		camera.ChangeFocalDistance(-10.0f);
 	}
-	if (nChar == 't' || nChar == 'T') {
-		screenWidth = 1920;
-		screenHeight = 1080;
-	}
 	if (nChar == 'D' || nChar == 'd') {
 		show_debug_window = !show_debug_window;
 	}
@@ -685,11 +847,41 @@ bool keyboardEvent(unsigned char nChar, int nX, int nY)
 	if (nChar == 't') {
 		doReset = !doReset;
 	}
+	if (nChar == 'f') {
+		doRegTest = !doRegTest;
+	}
 	if (nChar == 'c') {
 		reComplieShader = !reComplieShader;
 	}
 	if (nChar == 'v') {
 		reComplieKernel = !reComplieKernel;
+	}
+	if (nChar == '1') {
+		std::string model = "people0";
+		OpenImageFileToBuffer(model);
+		modelID = 0;
+		CLImageProcess();
+	}
+	if (nChar == '2') {
+		std::string model = "people1";
+		OpenImageFileToBuffer(model);
+		modelID = 1;
+		CLImageProcess();
+	}
+	if (nChar == '3') {
+		std::string model = "people2";
+		OpenImageFileToBuffer(model);
+		modelID = 2;
+		CLImageProcess();
+	}
+	if (nChar == '9') {
+		showK0 = !showK0;
+	}
+	if (nChar == '0') {
+		showK1 = !showK1;
+	}
+	if (nChar == '8') {
+		showDemo = !showDemo;
 	}
 
 	return true;
@@ -916,36 +1108,9 @@ void Init_Sensors(void) {
 		LoadFrame(depth1, filepath);
 	}
 	if(BF){ // sHANG
-		char filepath[64];
-		sprintf(filepath, "Data/BF/People1/K0/CPose%d_0.png", 1);
-		cv::Mat tmp0;
-		tmp0 = cv::imread(filepath, CV_LOAD_IMAGE_COLOR);
-		cv::undistort(tmp0, color_0, bfsensors[0].cali_rgb.intr.cameraMatrix, bfsensors[0].cali_rgb.intr.distCoeffs);
-
-		sprintf(filepath, "Data/BF/People1/K1/CPose%d_0.png", 1);
-		cv::Mat tmp1;
-		tmp1 = cv::imread(filepath, CV_LOAD_IMAGE_COLOR);
-		cv::undistort(tmp1, color_1, bfsensors[1].cali_rgb.intr.cameraMatrix, bfsensors[1].cali_rgb.intr.distCoeffs);
-
-		sprintf(filepath, "Data/BF/People1/K0/CPose%d_0.png", 2);
-		tmp0 = cv::imread(filepath, CV_LOAD_IMAGE_COLOR);
-		cv::undistort(tmp0, color_2, bfsensors[0].cali_rgb.intr.cameraMatrix, bfsensors[0].cali_rgb.intr.distCoeffs);
-
-		sprintf(filepath, "Data/BF/People1/K1/CPose%d_0.png", 2);
-		tmp1 = cv::imread(filepath, CV_LOAD_IMAGE_COLOR);
-		cv::undistort(tmp1, color_3, bfsensors[1].cali_rgb.intr.cameraMatrix, bfsensors[1].cali_rgb.intr.distCoeffs);
-
-		sprintf(filepath, "Data/BF/People1/K0/Pose%d_0.png", 1);
-		depth_0 = cv::imread(filepath, CV_LOAD_IMAGE_ANYDEPTH);
-
-		sprintf(filepath, "Data/BF/People1/K1/Pose%d_0.png", 1);
-		depth_1 = cv::imread(filepath, CV_LOAD_IMAGE_ANYDEPTH);
-
-		sprintf(filepath, "Data/BF/People1/K0/Pose%d_0.png", 2);
-		depth_2 = cv::imread(filepath, CV_LOAD_IMAGE_ANYDEPTH);
-
-		sprintf(filepath, "Data/BF/People1/K1/Pose%d_0.png", 2);
-		depth_3 = cv::imread(filepath, CV_LOAD_IMAGE_ANYDEPTH);
+		std::string model = "people0";
+		modelID = 0;
+		OpenImageFileToBuffer(model);
 	}
 	// bilaterial filter for depth image
 	if(0){

@@ -1,9 +1,10 @@
 #pragma once
 #include <ThirdParty\GMS-Feature-Matcher-master\include\GMS.h>
+#include <random>
 
 void GridMatch(cv::Mat &img1, cv::Mat &img2) {
-	cv::pyrDown(img1, img1);
-	cv::pyrDown(img2, img2);
+	//cv::pyrDown(img1, img1);
+	//cv::pyrDown(img2, img2);
 	vector<cv::KeyPoint> kp1, kp2;
 	cv::Mat d1, d2;
 	vector<cv::DMatch> matches_all, matches_grid;
@@ -30,8 +31,18 @@ void GridMatch(cv::Mat &img1, cv::Mat &img2) {
 
 	cout << "Get total " << matches_grid.size() << " matches." << endl;
 
-	cv::Mat show = DrawInlier(img1, img2, kp1, kp2, matches_grid, 1);
+	std::vector<cv::DMatch> show_grid(200);
+	std::random_device rd; // obtain a random number from hardware
+	std::mt19937 eng(rd()); // seed the generator
+	std::uniform_int_distribution<> distr(1700, 2000); // define the range
+	for (int i = 0; i < 200; i++) {
+		int id = distr(eng);
+		show_grid[i] = matches_grid[id];
+	}
+	//cv::Mat show = DrawInlier(img1, img2, kp1, kp2, matches_grid, 1);
+	cv::Mat show = DrawInlier(img1, img2, kp1, kp2, show_grid, 1);
 	cv::imshow("show", show);
+	cv::imwrite("GMS_match.png", show);
 	cv::waitKey(0);
 }
 
