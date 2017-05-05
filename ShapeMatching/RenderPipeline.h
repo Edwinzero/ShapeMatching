@@ -63,8 +63,8 @@ bool doReset = false;			// key: T
 bool doRegTest = false;         // key: F
 
 int modelID = -1;
-bool showK0 = false;			// Key: 9
-bool showK1 = false;			// Key: 0
+bool showK0 = false;			// Key: 9		2->0
+bool showK1 = false;			// Key: 0		3->1
 bool showDemo = false;			// Key: 8
 
 // PointCloud Rendering
@@ -98,12 +98,12 @@ GLuint GLMocaPointRenderProgram;
 GLuint GLGradientProgram;
 
 vector<float> pose0_2t0 = { 0.947342f, 0.010327f, -0.320058f, 18.586237f,
-							-0.009819f, 0.999947f, 0.003200f, -0.223906f,
-							0.320074f, 0.000112f, 0.947393f, 4.657801f,
+							-0.009819f, 0.999947f, 0.003200f, -0.203906f,
+							0.300074f, 0.001112f, 0.947393f, 4.607801f,
 							0.000000f, 0.000000f, 0.000000f, 1.000000f };
-vector<float> pose0_3t1 = { 0.946434f, 0.017699f, -0.322412f, 18.790529f,
+vector<float> pose0_3t1 = { 0.946434f, 0.017099f, -0.322412f, 18.790529f,
 							-0.016917f, 0.999843f, 0.005228f, -0.206227f,
-							0.322454f, 0.000507f, 0.946585f, 4.098423f,
+							0.302454f, 0.000507f, 0.946585f, 4.098423f,
 							0.000000f, 0.000000f, 0.000000f, 1.000000f };
 
 vector<float> pose1_2t0 = { 0.981160f, 0.003028f, 0.193175f, -8.695971f,
@@ -123,6 +123,35 @@ vector<float> pose2_3t1 = {	0.926306f, 0.007443f, -0.376698f, 18.173956f,
 							-0.008313f, 0.999965f, -0.000683f, 0.079684f,
 							0.376679f, 0.003764f, 0.926336f, 3.903884f,
 							0.000000f, 0.000000f, 0.000000f, 1.000000f };
+
+/*
+vector<float> pose0_2t0 = { 0.947342f, 0.010327f, -0.320058f, 18.586237f,
+-0.009819f, 0.999947f, 0.003200f, -0.223906f,
+0.320074f, 0.000112f, 0.947393f, 4.657801f,
+0.000000f, 0.000000f, 0.000000f, 1.000000f };
+vector<float> pose0_3t1 = { 0.946434f, 0.017699f, -0.322412f, 18.790529f,
+-0.016917f, 0.999843f, 0.005228f, -0.206227f,
+0.322454f, 0.000507f, 0.946585f, 4.098423f,
+0.000000f, 0.000000f, 0.000000f, 1.000000f };
+
+vector<float> pose1_2t0 = { 0.981160f, 0.003028f, 0.193175f, -8.695971f,
+-0.003047f, 0.999995f, -0.000202f, -0.004200f,
+-0.193175f, -0.000391f, 0.981164f, 0.623203f,
+0.000000f, 0.000000f, 0.000000f, 1.000000f };
+vector<float> pose1_3t1 = { 0.981019f, -0.011783f, 0.193551f, -7.953295f,
+0.011818f, 0.999930f, 0.000972f, -0.079097f,
+-0.193549f, 0.001333f, 0.981090f, 0.924206f,
+0.000000f, 0.000000f, 0.000000f, 1.000000f };
+
+vector<float> pose2_2t0 = { 0.933808f, 0.013725f, -0.357512f, 16.788931f,
+-0.013109f, 0.999906f, 0.004149f, -0.159492f,
+0.357535f, 0.000813f, 0.933900f, 4.308386f,
+0.000000f, 0.000000f, 0.000000f, 1.000000f };
+vector<float> pose2_3t1 = {	0.926306f, 0.007443f, -0.376698f, 18.173956f,
+-0.008313f, 0.999965f, -0.000683f, 0.079684f,
+0.376679f, 0.003764f, 0.926336f, 3.903884f,
+0.000000f, 0.000000f, 0.000000f, 1.000000f };
+*/
 
 Eigen::Matrix4f createMat4(vector<float> &val) {
 	Eigen::Matrix4f res = Eigen::Matrix4f::Identity();
@@ -762,25 +791,37 @@ void Update(void) {
 		if (modelID == 0) {
 			if (showK0) {
 				Kpc_2.model = createMat4(pose0_2t0);
+				float rmse = rme(Kpc_2.points, Kpc_0.points, Kpc_2.model);
+				printf("Data1 ==> [Model_2 to Model_0] :: Registration rmse = %f \n", rmse);
 			}
 			if (showK1) {
 				Kpc_3.model = createMat4(pose0_3t1);
+				float rmse = rme(Kpc_3.points, Kpc_1.points, Kpc_3.model);
+				printf("Data1 ==> [Model_3 to Model_1] :: Registration rmse = %f \n", rmse);
 			}
 		}
 		if (modelID == 1) {
 			if (showK0) {
 				Kpc_2.model = createMat4(pose1_2t0);
+				float rmse = rme(Kpc_2.points, Kpc_0.points, Kpc_2.model);
+				printf("Data2 ==> [Model_2 to Model_0] :: Registration rmse = %f \n", rmse);
 			}
 			if (showK1) {
 				Kpc_3.model = createMat4(pose1_3t1);
+				float rmse = rme(Kpc_3.points, Kpc_1.points, Kpc_3.model);
+				printf("Data2 ==> [Model_3 to Model_1] :: Registration rmse = %f \n", rmse);
 			}
 		}
 		if (modelID == 2) {
 			if (showK0) {
 				Kpc_2.model = createMat4(pose2_2t0);
+				float rmse = rme(Kpc_2.points, Kpc_0.points, Kpc_2.model);
+				printf("Data3 ==> [Model_2 to Model_0] :: Registration rmse = %f \n", rmse);
 			}
 			if (showK1) {
 				Kpc_3.model = createMat4(pose2_3t1);
+				float rmse = rme(Kpc_3.points, Kpc_1.points, Kpc_3.model);
+				printf("Data3 ==> [Model_3 to Model_1] :: Registration rmse = %f \n", rmse);
 			}
 		}
 		doRegTest = false;
@@ -1066,8 +1107,8 @@ void Init_Sensors(void) {
 		LoadGlobalRGBMatrix(sensors, "newSegData930/sensor-rgb.mat");
 	}
 	if (BF) {
-		bfsensors[0].LoadSensorParameters("Data/BF/IRIR_extr_cali_0.txt", "Data/DEPTH/RGBRGB_extr_cali_0.txt");
-		bfsensors[1].LoadSensorParameters("Data/BF/IRIR_extr_cali_1.txt", "Data/DEPTH/RGBRGB_extr_cali_1.txt");
+		bfsensors[0].LoadSensorParameters("Data/BF/IRIR_extr_cali_0.txt", "Data/BF/RGBRGB_extr_cali_0.txt");
+		bfsensors[1].LoadSensorParameters("Data/BF/IRIR_extr_cali_1.txt", "Data/BF/RGBRGB_extr_cali_1.txt");
 		LoadIRtoRGBMatrix(bfsensors[0], "Data/BF/IRRGB_extr_caliIR_B0.txt");
 		LoadIRtoRGBMatrix(bfsensors[1], "Data/BF/IRRGB_extr_caliIR_K1.txt");
 	}
@@ -1108,8 +1149,8 @@ void Init_Sensors(void) {
 		LoadFrame(depth1, filepath);
 	}
 	if(BF){ // sHANG
-		std::string model = "people0";
-		modelID = 0;
+		std::string model = "people1";
+		modelID = 1;
 		OpenImageFileToBuffer(model);
 	}
 	// bilaterial filter for depth image

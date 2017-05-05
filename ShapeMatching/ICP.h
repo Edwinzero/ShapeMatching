@@ -123,6 +123,25 @@ float rme(const std::vector< Eigen::Vector4f > &src, const std::vector< Eigen::V
 
 	return sqrt(e);
 }
+// sqrt( E( | dst - r * src - t |^2 ) )
+float rme(const std::vector< Eigen::Vector4f > &src, const std::vector< Eigen::Vector4f > &dst, const Eigen::Matrix4f &T) {
+	if (src.empty()) {
+		return 0.0f;
+	}
+
+	float e = 0.0f;
+	for (int i = 0; i < src.size(); i++) {
+		Eigen::Vector4f d = dst[i] - T * src[i];
+		float de = (d.dot(d) - d(3)*d(3));
+		if (de > 50.0f) {  // filter the noise contribution
+			continue;
+		}
+		e += de;
+	}
+	e /= (float)(src.size());
+	
+	return sqrt(e);
+}
 
 
 float PointToPoint_ICP(std::vector<Eigen::Vector3f> &src, std::vector<Eigen::Vector3f> &tar,
