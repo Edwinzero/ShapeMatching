@@ -33,7 +33,7 @@
 
 #define MOCA	0
 #define BF		1
-#define PLY_REG 1
+#define PLY_REG 0
 #define TEXTURE 0
 
 using namespace std;
@@ -46,6 +46,7 @@ bool show_test_window = false;
 bool show_cameraInfo_window = false;
 bool show_color_img_window = false;
 bool show_depth_img_window = false;
+bool show_instruction_window = true;
 
 Camera camera;
 // Sensor + Data
@@ -63,8 +64,8 @@ bool doReset = false;			// key: T
 bool doRegTest = false;         // key: F
 
 int modelID = -1;
-bool showK0 = false;			// Key: 9		2->0
-bool showK1 = false;			// Key: 0		3->1
+bool showK0 = true;			// Key: 9		2->0
+bool showK1 = true;			// Key: 0		3->1
 bool showDemo = false;			// Key: 8
 
 // PointCloud Rendering
@@ -493,12 +494,27 @@ void drawGUI()
 	}
 
 	// 3. Show the ImGui test window. Most of the sample code is in ImGui::ShowTestWindow()
-	if (show_test_window)
-	{
-		ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiSetCond_FirstUseEver);
-		ImGui::ShowTestWindow(&show_test_window);
-	}
+	//if (show_test_window)
+	//{
+	//	ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiSetCond_FirstUseEver);
+	//	ImGui::ShowTestWindow(&show_test_window);
+	//}
 
+	if (show_instruction_window) {
+		ImGui::SetNextWindowSize(ImVec2(200, 100), ImGuiSetCond_FirstUseEver);
+		ImGui::SetNextWindowPos(ImVec2(150, 20), ImGuiSetCond_FirstUseEver);
+		ImGui::Begin("User Instruction", &show_color_img_window, ImGuiWindowFlags_AlwaysAutoResize);
+		ImGui::Text("Key 9: turn on/off display upper camera data");
+		ImGui::Text("Key 0: turn on/off display upper camera data");
+		ImGui::Text("Key f: do registration on currently visiable data");
+		ImGui::Text("Key t: revert transformation");
+		ImGui::Text("Key 1: load board dataset");
+		ImGui::Text("Key 2: load chair dataset");
+		ImGui::Text("Key 3: load human dataset");
+		ImGui::Text("Key Esc: exit program");
+		ImGui::End();
+	}
+	/*
 	if (show_color_img_window) {
 		ImGui::SetNextWindowSize(ImVec2(colorTex.width, colorTex.height), ImGuiSetCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ImVec2(150, 20), ImGuiSetCond_FirstUseEver);
@@ -513,7 +529,7 @@ void drawGUI()
 		ImGui::Image((void*)depthTex.texID, ImVec2(depthTex.width, depthTex.height));
 		ImGui::End();
 	}
-
+	//*/
 	ImGui::Render();
 }
 
@@ -880,10 +896,10 @@ bool keyboardEvent(unsigned char nChar, int nX, int nY)
 		show_debug_window = !show_debug_window;
 	}
 	if (nChar == 'r') {
-		doFGR = !doFGR;
+		//doFGR = !doFGR;
 	}
 	if (nChar == 'e') {
-		doICP = !doICP;
+		//doICP = !doICP;
 	}
 	if (nChar == 't') {
 		doReset = !doReset;
@@ -922,7 +938,7 @@ bool keyboardEvent(unsigned char nChar, int nX, int nY)
 		showK1 = !showK1;
 	}
 	if (nChar == '8') {
-		showDemo = !showDemo;
+		//showDemo = !showDemo;
 	}
 
 	return true;
@@ -1115,7 +1131,7 @@ void Init_Sensors(void) {
 
 
 	// Load images
-	{
+	if(0){
 		char filepath[64];
 		//sprintf(filepath, "Data/K1/Pose_%d.jpeg", 666);
 		sprintf(filepath, "Data/BF/People0/K1/CPose%d_0.png", 1);
@@ -1149,8 +1165,8 @@ void Init_Sensors(void) {
 		LoadFrame(depth1, filepath);
 	}
 	if(BF){ // sHANG
-		std::string model = "people1";
-		modelID = 1;
+		std::string model = "people0";
+		modelID = 0;
 		OpenImageFileToBuffer(model);
 	}
 	// bilaterial filter for depth image
@@ -1175,8 +1191,8 @@ void Init_Sensors(void) {
 
 void Init_2DContents() {
 	// for gui display, use cv process then bind gui to display
-	InitColorImage(colorTex, "rgb_color.jpeg");
-	InitDepthImage(depthTex, "BGdepth.png");
+	//InitColorImage(colorTex, "rgb_color.jpeg");
+	//InitDepthImage(depthTex, "BGdepth.png");
 	//CreateFBO(imageCanvas, colorTex.width, colorTex.height);
 }
 
