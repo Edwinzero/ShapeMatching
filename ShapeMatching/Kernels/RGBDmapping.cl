@@ -27,13 +27,13 @@ __kernel void depth_to_point(__global unsigned short* depth, __global float3 *po
 	float d = convert_float_rtz(depth[id]) * 0.001;
 
 #if 1
-	if (d < 0.050 || d > 2.0f) {
+	if (d < 0.050f || d > 2.0f) {
 		d = 0.0;
 	}
 
-	if (uv.x < 20 || uv.x > dim.x - 20 || uv.y < 20 || uv.y > dim.y - 20) {
-		d = 0.0;
-	}
+	//if (uv.x < 20 || uv.x > dim.x - 20 || uv.y < 20 || uv.y > dim.y - 20) {
+	//	d = 0.0;
+	//}
 #endif
 
 	float3 p = (float3)(uv.x, uv.y, d);
@@ -141,9 +141,11 @@ __kernel void depth_to_color2(__global float3 *points, __global uchar3 *color, _
 	// transform point from world space to color space
 	float3 c_p = M.lo.lo.xyz * p.x + M.lo.hi.xyz * p.y + M.hi.lo.xyz * p.z + M.hi.hi.xyz;
 
-	float2 xy = (float2)(c_p.x / c_p.z , c_p.y / c_p.z);
-	
-	int2 uv = convert_int2_rtp(xy * Cintr.lo + Cintr.hi - (float2)(5.0f, 0.0f));
+	float2 xy = c_p.xy * Cintr.lo + Cintr.hi;
+	float c_pd = c_p.z;
+	int2 uv =  convert_int2_rtp(xy / (float2)(c_pd, c_pd));
+	//float2 xy = (float2)(c_p.x / c_p.z , c_p.y / c_p.z);	
+	//int2 uv = convert_int2_rtp(xy * Cintr.lo + Cintr.hi - (float2)(5.0f, 0.0f));
 
 	uchar3 co = (uchar3)(0, 0, 0);
 	if(uv.x < 0 || uv.x >= cdim.x || uv.y < 0 || uv.y >= cdim.y){

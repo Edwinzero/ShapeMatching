@@ -77,7 +77,7 @@ void GenCorrespondenceFromGridMatch(cv::Mat &img1, cv::Mat &img2, std::vector<st
 
 	cout << "Get total " << matches_grid.size() << " matches." << endl;
 	cv::Mat show = DrawInlier(img1, img2, kp1, kp2, matches_grid, 1);
-	ImgShow("GMS matching result", show, 1024, 424);
+	ImgShow("matching result", show, 1024, 424);
 
 	// save to corres
 	corres.resize(matches_grid.size());

@@ -672,11 +672,6 @@ void CLImageProcess() {
 			ImgShow("CL RGBDmapping K1", res3, 512, 424);
 
 
-			clprocess.BackProjectPointsShang(bfsensors[1].cali_ir.intr.IntrVec(), bfsensors[1].cali_ir.extr, (unsigned short*)depth_1.ptr(), Kpc_1.points, Kpc_1.normals);
-			Kpc_1.ScalePointData(50.0f);
-			CreateGLmem(Kobject_1, Kpc_1);
-
-			//SaveToPlyfile("pose1_1.ply", Kpc_1.points, Kpc_1.normals);
 
 			clprocess.BackProjectPointsShang(bfsensors[1].cali_ir.intr.IntrVec(), bfsensors[1].cali_ir.extr, (unsigned short*)depth_3.ptr(), Kpc_3.points, Kpc_3.normals);
 			Kpc_3.ScalePointData(50.0f);
@@ -697,6 +692,13 @@ void CLImageProcess() {
 			CreateGLmem(Kobject_3, Kpc_3);
 
 			//SaveToPlyfile("pose1_3.ply", Kpc_3.points, Kpc_3.normals);
+
+
+			clprocess.BackProjectPointsShang(bfsensors[1].cali_ir.intr.IntrVec(), bfsensors[1].cali_ir.extr, (unsigned short*)depth_1.ptr(), Kpc_1.points, Kpc_1.normals);
+			Kpc_1.ScalePointData(50.0f);
+			CreateGLmem(Kobject_1, Kpc_1);
+
+			//SaveToPlyfile("pose1_1.ply", Kpc_1.points, Kpc_1.normals);
 		
 	}
 
@@ -725,7 +727,7 @@ void CLImageProcess() {
 		// projective data corres
 		//CORRES::ProjectiveCorresondence(Kpc_2.points, Kpc_2.normals, Kpc_0.points, Kpc_0.normals, Kpc_2.model, Kpc_0.model, corres0, bfsensors[0], 50.0f);
 		//printf("[res2 -> res0] :: [Projective corres] :: set size is %d\n", corres0.size());
-		CORRES::ProjectiveCorresondence(Kpc_3.points, Kpc_3.normals, Kpc_1.points, Kpc_1.normals, Kpc_3.model, Kpc_1.model, corres1, bfsensors[1], 50.0f);
+		CORRES::ProjectiveCorresondence(Kpc_1.points, Kpc_1.normals, Kpc_1.points, Kpc_1.normals, Kpc_3.model, Kpc_1.model, corres1, bfsensors[1], 50.0f);
 		printf("[res3 -> res1] :: [Projective corres] :: set size is %d\n", corres1.size());
 	}
 }

@@ -2,7 +2,7 @@
 #ifndef _DEBUG_HELPER_H
 #define _DEBUG_HELPER_H
 namespace DHELPER{
-	void PointCloudStatisticalResult(std::vector<Eigen::Vector4f> points) {
+	void PointCloudStatisticalResult(std::vector<Eigen::Vector4f> &points) {
 		Eigen::Vector4f mean;
 		mean.setZero();
 		float maxx = -1, minx = 1000, maxy = -1, miny = 1000, maxz = -1, minz = 1000;
@@ -40,14 +40,14 @@ namespace DHELPER{
 		printf("[ z ] MIN: %f, Max: %f \n", minz, maxz);
 	}
 
-	void PointCloudValidNormal(std::vector<Eigen::Vector4f> normals) {
+	void PointCloudValidNormal(std::vector<Eigen::Vector4f> &normals) {
 		int size = normals.size();
 		int valid = 0;
 		for (int i = 0; i < size; i++) {
 			if (normals[i](0) == 0 && normals[i](1) == 0 && normals[i](2) == 0) {
 				continue;
 			}
-			if (normals[i].norm() < 0.999999f || normals[i].norm() > 1.000001f) {
+			if (normals[i].norm() < 0.99999999f || normals[i].norm() > 1.00000001f) {
 				printf("not normalized!!\n");
 				continue;
 			}
@@ -61,7 +61,7 @@ namespace DHELPER{
 		v *= 0.5f;  // ->[0, 1]
 		return (int)(v*255.0f);
 	}
-	void CheckNormalMap(std::vector<Eigen::Vector4f> normals) {
+	void CheckNormalMap(std::vector<Eigen::Vector4f> &normals) {
 		int size = normals.size();
 		cv::Mat res(cv::Size(512, 424), CV_8UC3, cv::Scalar(0,0,0));
 		for (int y = 0; y < res.rows; y++) {

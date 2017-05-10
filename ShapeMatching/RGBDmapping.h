@@ -160,7 +160,7 @@ public:
 		std::vector<float> M;
 		// transpose extr will make 0001 to column 3
 		cv::Mat trans = depth_to_color;
-		std::cout << trans << std::endl;
+		//std::cout << trans << std::endl;
 		MatToVec(trans.t(), M);
 
 		// color

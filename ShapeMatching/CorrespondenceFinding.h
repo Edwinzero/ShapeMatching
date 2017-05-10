@@ -27,48 +27,77 @@ namespace CORRES {
 		// for each pixel in depthP
 		for (int y = 0; y < 424; y++) {
 			for (int x = 0; x < 512; x++) {
-				int did = y * 512 + x;
+				int did = 512 * y + x;
 				// if valid depth
 				if (srcP[did](2) <= 0) {
 					continue;
 				}
 
 				// perspective project vertex
-				Vector3f dst = R * Vector3f(dstP[did](0), dstP[did](1), dstP[did](2)) + t;
-				// TODO : PERSPECTIVE PROJECTION ERROR!!!!
-				int px = fx * (dst(0) / dst(2)) + cx;
-				int py = fy * (dst(1) / dst(2)) + cy;
+				Vector3f dst = R * Vector3f(dstP[did](0), dstP[did](1), dstP[did](2)) + t;		// transform to camera space
+				float u = fx * (dst(0)) + cx;
+				float v = fy * (dst(1)) + cy;
+				float invd = scale / dst(2) ;
+				int px = static_cast<int>(u * invd);
+				int py = static_cast<int>(v * invd);											// compute uv coordinate
 				if (px < 0 || px >= 512 || py < 0 || py >= 424) {
 					continue;
 				}
 
 				// compute v and n for src
-				int sid = py * 512 + px;
-				Vector3f v = R * Vector3f(srcP[sid](0), srcP[sid](1), srcP[sid](2)) + t;
-				Vector3f n = R * Vector3f(srcN[sid](0), srcN[sid](1), srcN[sid](2));
-				n.normalize();
-				if (n(0) == 0 && n(1) == 0 && n(2) == 0) {
+				// divide scale
+				int sid = 512 * py + px;
+				Vector3f sv = R * Vector3f(srcP[sid](0), srcP[sid](1), srcP[sid](2)) + t;
+				Vector3f sn = R * Vector3f(srcN[sid](0), srcN[sid](1), srcN[sid](2));
+				sn.normalize();
+				if (sn(0) == 0 && sn(1) == 0 && sn(2) == 0) {
 					continue;
 				}
 
-				float dThres = 0.25f * scale*2000.0f;
+				printf(" >> did y: %d, x: %d\n", y, x);
+				printf(" >> sid y: %d, x: %d\n", py, px);
+				std::cout << " did normal of srcN: " << srcN[did] << std::endl;
+				std::cout << " sid normal of srcN: " << srcN[sid] << std::endl;
+
+				float dThres = 0.25f * scale*2.0f;
 				float nThres = 0.65f;
-				Vector3f diffv = v - dst;  // TODO: dst or dp? (cam space or world space?)
+				Vector3f diffv = sv - dst;  // TODO: dst or dp? (cam space or world space?)
 				Vector3f dn = Vector3f(dstN[did](0), dstN[did](1), dstN[did](2));
+				dn.normalize();
 				std::cout << "normal of srcN: " << srcN[sid] << std::endl;
 				std::cout << "normal of dstN: " << dstN[did] << std::endl;
-				printf("mag: %f,  dot: %f \n", diffv.norm(), n.dot(dstN[did].head<3>()));
-				if (diffv.norm() < dThres && n.dot(dn) < nThres){// && n.dot(dstN[did].head<3>()) > 0) {
+				printf("mag: %f,  dot: %f \n", diffv.norm(), sn.dot(dn));
+				if (diffv.norm() < dThres && sn.dot(dn) < nThres){// && n.dot(dstN[did].head<3>()) > 0) {
 					std::cout << "normal of srcN: " << srcN[sid] << std::endl;
 					std::cout << "normal of dstN: " << dstN[did] << std::endl;
-					printf("mag: %f,  dot: %f \n", diffv.norm(), n.dot(dn));
+					printf("mag: %f,  dot: %f \n", diffv.norm(), sn.dot(dn));
 					corres.push_back(std::pair<int, int>(sid, did));
 				}
 			}
 		}
 	}
 
+	void ProjectiveCorresondence(cv::Mat srcD, std::vector<Eigen::Vector4f> &srcP, std::vector<Eigen::Vector4f> &srcN, std::vector<Eigen::Vector4f> &dstP, std::vector<Eigen::Vector4f> &dstN,
+		Eigen::Matrix4f &msrc, Eigen::Matrix4f &mdst,
+		std::vector<pair<int, int>> &corres, Sensor &sensor, float scale = 1.0f) {
+		corres.clear();
+		cv::Mat intr = sensor.cali_ir.intr.IntrVec();
+		float fx = intr.at<double>(0);
+		float fy = intr.at<double>(1);
+		float cx = intr.at<double>(2);
+		float cy = intr.at<double>(3);
 
+		// extract R and T from mdst
+		Eigen::Matrix3f R = mdst.block<3, 3>(0, 0);
+		Eigen::Vector3f t = mdst.block<3, 1>(0, 3);
+
+		// for each pixel in depthP
+		for (int y = 0; y < 424; y++) {
+			for (int x = 0; x < 512; x++) {
+
+			}
+		}
+	}
 };
 
 
