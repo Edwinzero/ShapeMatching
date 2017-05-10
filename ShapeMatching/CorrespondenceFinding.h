@@ -34,30 +34,34 @@ namespace CORRES {
 				}
 
 				// perspective project vertex
-				Vector3f dst = R * dstP[did].head<3>() + t; // R * Vector3f(dstP[id](0), dstP[id](1), dstP[id](2)) + t;
-				// TODO : either error in intrinsic or in px py (tmp hack)
-				int px = fy * (dst(0) / dst(2)) + cy;
-				int py = fx * (dst(1) / dst(2)) + cx;
+				Vector3f dst = R * Vector3f(dstP[did](0), dstP[did](1), dstP[did](2)) + t;
+				// TODO : PERSPECTIVE PROJECTION ERROR!!!!
+				int px = fx * (dst(0) / dst(2)) + cx;
+				int py = fy * (dst(1) / dst(2)) + cy;
 				if (px < 0 || px >= 512 || py < 0 || py >= 424) {
 					continue;
 				}
 
 				// compute v and n for src
 				int sid = py * 512 + px;
-				Vector3f v = R * srcP[sid].head<3>() + t; // R * Vector3f(srcP[did](0), srcP[did](1), srcP[did](2)) + t;
-				Vector3f n = R * srcN[sid].head<3>();	  // Vector3f(srcN[did](0), srcN[did](1), srcN[did](2));
+				Vector3f v = R * Vector3f(srcP[sid](0), srcP[sid](1), srcP[sid](2)) + t;
+				Vector3f n = R * Vector3f(srcN[sid](0), srcN[sid](1), srcN[sid](2));
 				n.normalize();
 				if (n(0) == 0 && n(1) == 0 && n(2) == 0) {
 					continue;
 				}
 
-				float dThres = 0.25f * scale*2;
+				float dThres = 0.25f * scale*2000.0f;
 				float nThres = 0.65f;
-				Vector3f diffv = v - dstP[did].head<3>();
-				if (diffv.norm() < dThres && n.dot(dstN[did].head<3>()) < nThres){// && n.dot(dstN[did].head<3>()) > 0) {
+				Vector3f diffv = v - dst;  // TODO: dst or dp? (cam space or world space?)
+				Vector3f dn = Vector3f(dstN[did](0), dstN[did](1), dstN[did](2));
+				std::cout << "normal of srcN: " << srcN[sid] << std::endl;
+				std::cout << "normal of dstN: " << dstN[did] << std::endl;
+				printf("mag: %f,  dot: %f \n", diffv.norm(), n.dot(dstN[did].head<3>()));
+				if (diffv.norm() < dThres && n.dot(dn) < nThres){// && n.dot(dstN[did].head<3>()) > 0) {
 					std::cout << "normal of srcN: " << srcN[sid] << std::endl;
 					std::cout << "normal of dstN: " << dstN[did] << std::endl;
-					printf("mag: %f,  dot: %f \n", (v - dstP[did].head<3>()).norm(), n.dot(dstN[did].head<3>()));
+					printf("mag: %f,  dot: %f \n", diffv.norm(), n.dot(dn));
 					corres.push_back(std::pair<int, int>(sid, did));
 				}
 			}

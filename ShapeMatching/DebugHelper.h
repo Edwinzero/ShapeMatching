@@ -47,7 +47,7 @@ namespace DHELPER{
 			if (normals[i](0) == 0 && normals[i](1) == 0 && normals[i](2) == 0) {
 				continue;
 			}
-			if (normals[i].norm() > 0.999999f && normals[i].norm() < 1.000001f) {
+			if (normals[i].norm() < 0.999999f || normals[i].norm() > 1.000001f) {
 				printf("not normalized!!\n");
 				continue;
 			}

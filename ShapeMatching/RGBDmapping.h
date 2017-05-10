@@ -289,7 +289,7 @@ public:
 		// backprojection
 		cq.NDRangeKernel2((kn_d2p << mem_d, mem_p, depth_img_size, K), global_size2, local_size2);
 		cq.NDRangeKernel2((kn_p2w << mem_p, mem_w, depth_img_size, M), global_size2, local_size2);
-		cq.NDRangeKernel2((kn_p2n << mem_w, mem_n, depth_img_size), global_size2, local_size2);
+		cq.NDRangeKernel2((kn_p2n << mem_p, mem_n, depth_img_size), global_size2, local_size2);
 
 		points.resize(depth_img_size.area());
 		normals.resize(depth_img_size.area());
