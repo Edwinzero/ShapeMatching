@@ -14,4 +14,7 @@ void main(){
     vec4 view_pos = view * model_pos; 
     gl_Position = proj * view_pos;
     gl_PointSize = 3.0;
+
+    //pos = model_pos.xyz;
+    //normal = out_normal;
 } 

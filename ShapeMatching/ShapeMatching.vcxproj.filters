@@ -167,6 +167,9 @@
     <ClInclude Include="GMSmatching.h">
       <Filter>Header Files\Feature</Filter>
     </ClInclude>
+    <ClInclude Include="DebugHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="IMGUI\imgui.ini">

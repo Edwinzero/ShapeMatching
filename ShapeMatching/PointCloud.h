@@ -45,6 +45,16 @@ public:
 	void ScalePointData(const float scale = 1.0f) {
 		ScalePoints(this->points, scale);
 	}
+
+	void TransformPointData(const Eigen::Matrix4f &mat) {
+		int size = points.size();
+		Vector4f tmp(0, 0, 0, 0);
+		for (int i = 0; i < size; i++) {
+			points[i](3) = 1.0f;
+			tmp = mat * points[i];
+			points[i] = tmp;
+		}
+	}
 };
 
 void CreateGLmem(GLmem &m, PointCloud &pc) {

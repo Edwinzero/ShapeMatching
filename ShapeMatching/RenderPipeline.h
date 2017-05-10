@@ -30,6 +30,9 @@
 #include <GMSmatching.h>
 #include <CorrespondenceFinding.h>
 
+// Debug helper
+#include <DebugHelper.h>
+
 
 #define MOCA	0
 #define BF		1
@@ -66,7 +69,7 @@ bool doRegTest = false;         // key: F
 int modelID = -1;
 bool showK0 = true;			// Key: 9		2->0
 bool showK1 = true;			// Key: 0		3->1
-bool showDemo = false;			// Key: 8
+bool showDemo = true;			// Key: 8
 
 // PointCloud Rendering
 GLmem moca_model;
@@ -90,9 +93,9 @@ ImageTex depthTex;
 GLfbo imageCanvas;
 GLmem canvas;
 
-// CL programs
+// CL programs Key: V
 bool reComplieKernel = false;
-// GL programs
+// GL programs Key: C
 bool reComplieShader = false;
 GLuint GLPointRenderProgram;
 GLuint GLMocaPointRenderProgram;
@@ -554,7 +557,7 @@ void Render(void)
 		glMatrixMode(GL_MODELVIEW);
 		glPopMatrix();
 	} 
-	if (1) {
+	if (0) {
 		// draw 2D scene
 		glMatrixMode(GL_MODELVIEW);
 		glPushMatrix();
@@ -677,6 +680,20 @@ void CLImageProcess() {
 
 			clprocess.BackProjectPointsShang(bfsensors[1].cali_ir.intr.IntrVec(), bfsensors[1].cali_ir.extr, (unsigned short*)depth_3.ptr(), Kpc_3.points, Kpc_3.normals);
 			Kpc_3.ScalePointData(50.0f);
+			//DHELPER::PointCloudStatisticalResult(Kpc_3.points);
+			DHELPER::PointCloudValidNormal(Kpc_3.normals);
+			if (modelID == 1) {
+				Eigen::Matrix4f tmp;
+				tmp << 0.981019f, -0.011783f, 0.193551f, -7.953295f,
+					0.011818f, 0.999930f, 0.000972f, 0.079097f,
+					-0.193549f, 0.001333f, 0.981090f, 0.024206f,
+						0.000000f, 0.000000f, 0.000000f, 1.000000f;
+				Kpc_3.model = tmp;
+				//DHELPER::PointCloudStatisticalResult(Kpc_3.points);
+				DHELPER::PointCloudValidNormal(Kpc_3.normals);
+				DHELPER::CheckNormalMap(Kpc_3.normals);
+			}
+
 			CreateGLmem(Kobject_3, Kpc_3);
 
 			//SaveToPlyfile("pose1_3.ply", Kpc_3.points, Kpc_3.normals);
@@ -694,12 +711,11 @@ void CLImageProcess() {
 		//GridMatch(res0, res2);
 		//GridMatch(color_0, color_2);
 		
-			GenCorrespondenceFromGridMatch(res0, res2, corres0);
-			printf("[res0 , res2] :: << GMS filter >> coorespondence set size: %d\n", corres0.size());
-		
-		
-			GenCorrespondenceFromGridMatch(res1, res3, corres1);
-			printf("[res1 , res3] :: << GMS filter >> coorespondence set size: %d\n", corres1.size());
+			GenCorrespondenceFromGridMatch(res2, res0, corres0);
+			printf("[res2 -> res0] :: << GMS filter >> coorespondence set size: %d\n", corres0.size());
+	
+			//GenCorrespondenceFromGridMatch(res3, res1, corres1);
+			//printf("[res3 -> res1] :: << GMS filter >> coorespondence set size: %d\n", corres1.size());
 		
 		
 	}
@@ -707,18 +723,20 @@ void CLImageProcess() {
 	// correspondence finding
 	{
 		// projective data corres
-		//CORRES::ProjectiveCorresondence(Kpc_0.points, Kpc_0.normals, Kpc_2.points, Kpc_2.normals, Kpc_0.model, Kpc_2.model, corres0, bfsensors[0], 50.0f);
-		//printf("[res0, res2] :: [Projective corres] :: set size is %d\n", corres0.size());
-		//CORRES::ProjectiveCorresondence(Kpc_1.points, Kpc_1.normals, Kpc_3.points, Kpc_3.normals, corres1, bfsensors[1]);
+		//CORRES::ProjectiveCorresondence(Kpc_2.points, Kpc_2.normals, Kpc_0.points, Kpc_0.normals, Kpc_2.model, Kpc_0.model, corres0, bfsensors[0], 50.0f);
+		//printf("[res2 -> res0] :: [Projective corres] :: set size is %d\n", corres0.size());
+		CORRES::ProjectiveCorresondence(Kpc_3.points, Kpc_3.normals, Kpc_1.points, Kpc_1.normals, Kpc_3.model, Kpc_1.model, corres1, bfsensors[1], 50.0f);
+		printf("[res3 -> res1] :: [Projective corres] :: set size is %d\n", corres1.size());
 	}
 }
 //=========================================================================
 //		Update
 //=========================================================================
+// src(current data); dst(target data); transfer src to dst
 void DoICP(PointCloud &src, PointCloud &dst, std::vector<std::pair<int, int>> &corres) {
 	Eigen::Matrix3f rot = Eigen::Matrix3f::Identity();
 	Eigen::Vector3f trans = Eigen::Vector3f::Zero();
-	if (0) {
+	if (1) {
 		if (corres.empty()) {
 			float rme = PointToPoint_ICP(src.points, dst.points, rot, trans);
 			std::cout << "[Point to Point SVD ICP] :: " << std::endl;
@@ -758,7 +776,9 @@ void DoICP(PointCloud &src, PointCloud &dst, std::vector<std::pair<int, int>> &c
 		}
 
 	}
-	ConstructMatEigenToEigen4(src.model, rot, trans);
+	Eigen::Matrix4f mat = Eigen::Matrix4f::Identity();
+	ConstructMatEigenToEigen4(mat, rot, trans);
+	src.model = mat * src.model;
 }
 void DoFGR(PointCloud &src, PointCloud &dst, std::vector<std::pair<int, int>> &corres) {
 	FastGlobalReg fgr;
@@ -770,7 +790,9 @@ void DoFGR(PointCloud &src, PointCloud &dst, std::vector<std::pair<int, int>> &c
 	std::cout << "[Fast Global Reg] " << std::endl;
 	std::cout << "rme : " << rme << std::endl;
 	std::cout << std::endl;
-	src.model = fgr.GetRes().inverse();
+	Eigen::Matrix4f mat = Eigen::Matrix4f::Identity();
+	mat = fgr.GetRes().inverse();
+	src.model = mat * src.model;
 }
 void DoFGRTestCorrectness(PointCloud &src, PointCloud &dst) {
 	FastGlobalReg fgr;
@@ -782,7 +804,9 @@ void DoFGRTestCorrectness(PointCloud &src, PointCloud &dst) {
 	std::cout << "[Fast Global Reg] " << std::endl;
 	std::cout << "rme : " << rme << std::endl;
 	std::cout << std::endl;
-	src.model = fgr.GetRes().inverse();
+	Eigen::Matrix4f mat = Eigen::Matrix4f::Identity();
+	mat = fgr.GetRes().inverse();
+	src.model = mat * src.model;
 }
 void DoReset(PointCloud &pc) {
 	Eigen::Matrix4f tmp = pc.model.inverse();
@@ -792,14 +816,19 @@ void DoReset(PointCloud &pc) {
 void Update(void) {
 	if (doFGR) {
 		DoFGR(Kpc_0, Kpc_2, corres0);
+		DoFGR(Kpc_1, Kpc_3, corres1);
 		DoFGRTestCorrectness(pc0, pc1);
 		doFGR = false;
 	}
 
 	if (doICP) {
-		DoICP(Kpc_0, Kpc_2, corres0);
+		printf("[P2P] : 2 -> 0: \n");
+		DoICP(Kpc_2, Kpc_0, corres0);
+		printf("[P2P] : 3 -> 1: \n");
+		DoICP(Kpc_3, Kpc_1, corres1);
 		std::vector<std::pair<int, int>> em;
-		DoICP(pc0, pc1, em);
+		printf("[P2P] : ref \n");
+		DoICP(pc1, pc0, em);
 		doICP = false;
 	}
 
@@ -895,11 +924,14 @@ bool keyboardEvent(unsigned char nChar, int nX, int nY)
 	if (nChar == 'D' || nChar == 'd') {
 		show_debug_window = !show_debug_window;
 	}
+	if (nChar == 'I' || nChar == 'i') {
+		show_instruction_window = !show_instruction_window;
+	}
 	if (nChar == 'r') {
-		//doFGR = !doFGR;
+		doFGR = !doFGR;
 	}
 	if (nChar == 'e') {
-		//doICP = !doICP;
+		doICP = !doICP;
 	}
 	if (nChar == 't') {
 		doReset = !doReset;
@@ -1165,8 +1197,8 @@ void Init_Sensors(void) {
 		LoadFrame(depth1, filepath);
 	}
 	if(BF){ // sHANG
-		std::string model = "people0";
-		modelID = 0;
+		std::string model = "people1";
+		modelID = 1;
 		OpenImageFileToBuffer(model);
 	}
 	// bilaterial filter for depth image

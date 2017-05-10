@@ -173,10 +173,10 @@ void GMS::run(int type, int rp) {
 	{
 		if (kpts_num_of_each_region[i] <= 0) continue;
 		pair<int, int> max_region(0, 0);
-		//for (auto &p : motion_number[i]) { if (p.second > max_region.second) max_region = p; }
-		for (map<int, int>::iterator p = motion_number[i].begin(); p != motion_number[i].end(); p++) {
-			if (p->second > max_region.second) max_region = pair<int, int>(p->first, p->second);
-		}
+		for (auto &p : motion_number[i]) { if (p.second > max_region.second) max_region = p; }
+		//for (map<int, int>::iterator p = motion_number[i].begin(); p != motion_number[i].end(); p++) {
+		//	if (p->second > max_region.second) max_region = pair<int, int>(p->first, p->second);
+		//}
 		IdxToRightRegion[i] = max_region.first;
 		numGrid++;
 	}

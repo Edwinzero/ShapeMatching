@@ -53,7 +53,7 @@ void GenCorrespondenceFromGridMatch(cv::Mat &img1, cv::Mat &img2, std::vector<st
 	cv::Mat d1, d2;
 	vector<cv::DMatch> matches_all, matches_grid;
 
-	cv::Ptr<cv::ORB> orb = cv::ORB::create(4000);
+	cv::Ptr<cv::ORB> orb = cv::ORB::create(400);
 	orb->setFastThreshold(0);
 	orb->detectAndCompute(img1, cv::Mat(), kp1, d1);
 	orb->detectAndCompute(img2, cv::Mat(), kp2, d2);
@@ -65,6 +65,8 @@ void GenCorrespondenceFromGridMatch(cv::Mat &img1, cv::Mat &img2, std::vector<st
 #else
 	cv::BFMatcher matcher(cv::NORM_HAMMING);
 	matcher.match(d1, d2, matches_all);
+	//cv::FlannBasedMatcher matcher;
+	//matcher.match(d1, d2, matches_all);
 #endif
 
 	// GMS filter

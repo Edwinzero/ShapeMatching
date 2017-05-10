@@ -137,6 +137,7 @@
     <ClInclude Include="CLutils.h" />
     <ClInclude Include="CorrespondenceFinding.h" />
     <ClInclude Include="cv_op.h" />
+    <ClInclude Include="DebugHelper.h" />
     <ClInclude Include="Eigen_op.h" />
     <ClInclude Include="FastGlobalRegistration.h" />
     <ClInclude Include="FPFH.h" />
