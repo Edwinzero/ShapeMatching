@@ -31,9 +31,9 @@ __kernel void depth_to_point(__global unsigned short* depth, __global float3 *po
 		d = 0.0;
 	}
 
-	//if (uv.x < 20 || uv.x > dim.x - 20 || uv.y < 20 || uv.y > dim.y - 20) {
-	//	d = 0.0;
-	//}
+	if (uv.x < 20 || uv.x > dim.x - 20 || uv.y < 20 || uv.y > dim.y - 20) {
+		d = 0.0;
+	}
 #endif
 
 	float3 p = (float3)(uv.x, uv.y, d);

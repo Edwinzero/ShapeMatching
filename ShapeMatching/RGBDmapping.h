@@ -147,8 +147,8 @@ public:
 		}
 	}
 
-	void DepthToRGBMapping(const cv::Mat &depth_intr, const cv::Mat &depth_extr, const cv::Mat &depth_to_color,
-		const cv::Mat &color_intr, const cv::Mat &color_extr,
+	void DepthToRGBMapping(const cv::Mat &depth_intr, const cv::Mat &depth_to_color,
+		const cv::Mat &color_intr, 
 		const unsigned short *depth, const cv::Mat &color, cv::Mat &res, std::vector<Eigen::Vector4f> &points) {
 		// K
 		std::vector<float> DK;
@@ -271,7 +271,7 @@ public:
 		// M
 		std::vector<float> M;
 
-#if 1
+#if 0
 		double rep[] = {
 			0, 1, 0, 0,
 			-1, 0, 0, 0.69,

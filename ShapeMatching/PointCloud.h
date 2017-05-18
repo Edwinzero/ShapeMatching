@@ -42,6 +42,22 @@ public:
 		loader.CopyToBuffer(points, normals);
 	}
 
+	// matrix scale
+	void MatrixScale(float x = 1.0f, float y = 1.0f, float z = 1.0f) {
+		Matrix4f m = Matrix4f::Identity();
+		m <<
+			x, 0.0f, 0.0f, 0.0f,
+			0.0f, y, 0.0f, 0.0f,
+			0.0f, 0.0f, z, 0.0f,
+			0.0f, 0.0f, 0.0f, 1.0f;
+		model *= m;
+	}
+
+	// matrix transform
+	void MatrixTransform(const Matrix4f m) {
+		model *= m;
+	}
+
 	void ScalePointData(const float scale = 1.0f) {
 		ScalePoints(this->points, scale);
 	}
@@ -55,6 +71,8 @@ public:
 			points[i] = tmp;
 		}
 	}
+
+
 };
 
 void CreateGLmem(GLmem &m, PointCloud &pc) {
