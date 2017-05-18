@@ -34,11 +34,12 @@
 #include <DebugHelper.h>
 
 
-#define MOCA	0
-#define BF		0
-#define PLY_REG 0
-#define TEXTURE 0
-#define SHANG   1
+#define MOCA	0	// 1
+#define BF		2	// 2
+#define SHANG   3	// 3
+#define PLY_REG 0	// 4
+#define TEXTURE 0	// 5
+
 
 using namespace std;
 unsigned int screenWidth = 1280;
@@ -315,7 +316,7 @@ void DrawScene2D() {
 	}
 }
 
-void DrawGLmem(GLuint &program, PointCloud &pc, GLmem &mem, Eigen::Vector3f color = Eigen::Vector3f(1.0f, 0.0f, 0.0f)) {
+void DrawGLmem(GLuint &program, PointCloud &pc, GLmem &mem, Eigen::Matrix4f &rep, Eigen::Vector3f color = Eigen::Vector3f(1.0f, 0.0f, 0.0f)) {
 	glEnable(GL_PROGRAM_POINT_SIZE);
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
@@ -327,12 +328,6 @@ void DrawGLmem(GLuint &program, PointCloud &pc, GLmem &mem, Eigen::Vector3f colo
 		glGetFloatv(GL_PROJECTION_MATRIX, proj.data());
 		glGetFloatv(GL_MODELVIEW_MATRIX, view.data());
 		// render transformation (scale + rep)
-		Eigen::Matrix4f rep; // camera to world
-		rep <<
-				0.0f, 1.0f*dataScale, 0.0f, 0.0f,
-				-1.0f*dataScale, 0.0f, 0.0f, 0.69f*dataScale,
-				0.0f, 0.0f, 1.0f*dataScale, 0.0f,
-				0.0f, 0.0f, 0.0f, 1.0f;
 		model = pc.model * rep;
 		
 		glUniformMatrix4fv(glGetUniformLocation(program, "proj"), 1, GL_FALSE, proj.data());
@@ -382,21 +377,28 @@ void DrawScene3D() {
 			glEnable(GL_PROGRAM_POINT_SIZE);
 			glMatrixMode(GL_MODELVIEW);
 			glPushMatrix();
+			Eigen::Matrix4f rep; // camera to world
+			rep <<
+					0.0f, 1.0f*dataScale, 0.0f, 0.0f,
+					-1.0f*dataScale, 0.0f, 0.0f, 0.69f*dataScale,
+					0.0f, 0.0f, 1.0f*dataScale, 0.0f,
+					0.0f, 0.0f, 0.0f, 1.0f;
+			
 			if (showK0) {
 				if (Kpc_0.hasPoint) {
-					DrawGLmem(GLPointRenderProgram, Kpc_0, Kobject_0, Eigen::Vector3f(1.0f, 0.0f, 0.0f));
+					DrawGLmem(GLPointRenderProgram, Kpc_0, Kobject_0, rep, Eigen::Vector3f(1.0f, 0.0f, 0.0f));
 				}
 				if (Kpc_2.hasPoint) {
-					DrawGLmem(GLPointRenderProgram, Kpc_2, Kobject_2, Eigen::Vector3f(0.0f, 0.0f, 1.0f));
+					DrawGLmem(GLPointRenderProgram, Kpc_2, Kobject_2, rep, Eigen::Vector3f(0.0f, 0.0f, 1.0f));
 				}
 			}
 			
 			if (showK1) {
 				if (Kpc_1.hasPoint) {
-					DrawGLmem(GLPointRenderProgram, Kpc_1, Kobject_1, Eigen::Vector3f(0.0f, 1.0f, 0.0f));
+					DrawGLmem(GLPointRenderProgram, Kpc_1, Kobject_1, rep, Eigen::Vector3f(0.0f, 1.0f, 0.0f));
 				}
 				if (Kpc_3.hasPoint) {
-					DrawGLmem(GLPointRenderProgram, Kpc_3, Kobject_3, Eigen::Vector3f(1.0f, 1.0f, 0.0f));
+					DrawGLmem(GLPointRenderProgram, Kpc_3, Kobject_3, rep, Eigen::Vector3f(1.0f, 1.0f, 0.0f));
 				}
 			}			
 			glMatrixMode(GL_MODELVIEW);
@@ -406,13 +408,19 @@ void DrawScene3D() {
 			glEnable(GL_PROGRAM_POINT_SIZE);
 			glMatrixMode(GL_MODELVIEW);
 			glPushMatrix();
+			Eigen::Matrix4f rep; // camera to world
+			rep <<
+					1.0f*dataScale, 0.0F, 0.0f, 0.0f,
+					0.0F, -1.0f*dataScale, 0.0f, 0.69f*dataScale,
+					0.0f, 0.0f, 1.0f*dataScale, 0.0f,
+					0.0f, 0.0f, 0.0f, 1.0f;
 			
-				if (Kpcs0.hasPoint) {
-					DrawGLmem(GLPointRenderProgram, Kpcs0, Kobjs0, Eigen::Vector3f(1.0f, 0.0f, 0.0f));
-				}
-				if (Kpcs1.hasPoint) {
-					DrawGLmem(GLPointRenderProgram, Kpcs1, Kobjs1, Eigen::Vector3f(0.0f, 0.0f, 1.0f));
-				}
+			if (Kpcs0.hasPoint) {
+				DrawGLmem(GLPointRenderProgram, Kpcs0, Kobjs0, rep, Eigen::Vector3f(1.0f, 0.0f, 0.0f));
+			}
+			if (Kpcs1.hasPoint) {
+				DrawGLmem(GLPointRenderProgram, Kpcs1, Kobjs1, rep, Eigen::Vector3f(0.0f, 0.0f, 1.0f));
+			}
 			
 			glMatrixMode(GL_MODELVIEW);
 			glPopMatrix();
@@ -421,11 +429,17 @@ void DrawScene3D() {
 			glEnable(GL_PROGRAM_POINT_SIZE);
 			glMatrixMode(GL_MODELVIEW);
 			glPushMatrix();
+			Eigen::Matrix4f rep; // camera to world
+			rep <<
+				0.0f, 1.0f*dataScale, 0.0f, 0.0f,
+				-1.0f*dataScale, 0.0f, 0.0f,0.0f,
+				0.0f, 0.0f, 1.0f*dataScale, 0.0f,
+				0.0f, 0.0f, 0.0f, 1.0f;
 			if (Kpc0.hasPoint) {
-				DrawGLmem(GLPointRenderProgram, Kpc0, Kobject0);
+				DrawGLmem(GLPointRenderProgram, Kpc0, Kobject0, rep);
 			}
 			if (Kpc1.hasPoint) {
-				DrawGLmem(GLPointRenderProgram, Kpc1, Kobject1);
+				DrawGLmem(GLPointRenderProgram, Kpc1, Kobject1, rep);
 			}
 			glMatrixMode(GL_MODELVIEW);
 			glPopMatrix();
@@ -434,11 +448,12 @@ void DrawScene3D() {
 			glEnable(GL_PROGRAM_POINT_SIZE);
 			glMatrixMode(GL_MODELVIEW);
 			glPushMatrix();
+			Eigen::Matrix4f rep = Eigen::Matrix4f::Identity(); // camera to world
 			if (pc0.hasPoint) {
-				DrawGLmem(GLPointRenderProgram, pc0, object0);
+				DrawGLmem(GLPointRenderProgram, pc0, object0, rep);
 			}
 			if (pc1.hasPoint) {
-				DrawGLmem(GLPointRenderProgram, pc1, object1);
+				DrawGLmem(GLPointRenderProgram, pc1, object1, rep);
 				//glEnableClientState(GL_VERTEX_ARRAY);
 				//glEnableClientState(GL_COLOR_ARRAY);
 				//glColor3f(0.0f, 1.0f, 0.0f);

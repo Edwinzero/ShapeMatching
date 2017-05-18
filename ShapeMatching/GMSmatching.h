@@ -40,7 +40,7 @@ void GridMatch(cv::Mat &img1, cv::Mat &img2) {
 		show_grid[i] = matches_grid[id];
 	}
 	//cv::Mat show = DrawInlier(img1, img2, kp1, kp2, matches_grid, 1);
-	cv::Mat show = DrawInlier(img1, img2, kp1, kp2, show_grid, 1);
+	cv::Mat show = DrawInlier(img1, img2, kp1, kp2, show_grid, 2);
 	cv::imshow("show", show);
 	cv::imwrite("GMS_match.png", show);
 	cv::waitKey(0);
@@ -76,7 +76,7 @@ void GenCorrespondenceFromGridMatch(cv::Mat &img1, cv::Mat &img2, std::vector<st
 	matches_grid = gms.getInlier(0);
 
 	cout << "Get total " << matches_grid.size() << " matches." << endl;
-	cv::Mat show = DrawInlier(img1, img2, kp1, kp2, matches_grid, 1);
+	cv::Mat show = DrawInlier(img1, img2, kp1, kp2, matches_grid, 2);
 	ImgShow("matching result", show, 1024, 424);
 
 	// save to corres
