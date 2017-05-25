@@ -156,9 +156,16 @@ public:
 	PFH() : knn_radius(0) {	}
 	~PFH() { delete root; }
 
-	void SetProcessingData(std::vector<Vector3f> &p, std::vector<Vector3f> &n) {
-		points = p;
-		normals = n;
+	void SetProcessingData(std::vector<Vector4f> &p, std::vector<Vector4f> &n) {
+		// cpy pt and normal
+		points.resize(p.size());
+		normals.resize(n.size());
+		for (int i = 0; i < points.size(); i++) {
+			Vector3f tp(p[i](0), p[i](1), p[i](2));
+			Vector3f tn(n[i](0), n[i](1), n[i](2));
+			points[i] = tp;
+			normals[i] = tn;
+		}
 		if (!points.empty()) {
 			pointsPtr.resize(points.size());
 			for (int i = 0; i < points.size(); i++){
