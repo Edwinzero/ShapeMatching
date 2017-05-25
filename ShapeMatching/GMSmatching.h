@@ -46,14 +46,16 @@ void GridMatch(cv::Mat &img1, cv::Mat &img2) {
 	cv::waitKey(0);
 }
 
-
-void GenCorrespondenceFromGridMatch(cv::Mat &img1, cv::Mat &img2, std::vector<std::pair<int, int>> &corres) {
+/*
+	Generate reliable and rich color correspondence set
+*/
+inline void GenCorrespondenceFromGridMatch(cv::Mat &img1, cv::Mat &img2, std::vector<std::pair<cv::Point2f, cv::Point2f>> &corres, int isshow = 0) {
 	corres.clear();
 	vector<cv::KeyPoint> kp1, kp2;
 	cv::Mat d1, d2;
 	vector<cv::DMatch> matches_all, matches_grid;
 
-	cv::Ptr<cv::ORB> orb = cv::ORB::create(400);
+	cv::Ptr<cv::ORB> orb = cv::ORB::create(10000);
 	orb->setFastThreshold(0);
 	orb->detectAndCompute(img1, cv::Mat(), kp1, d1);
 	orb->detectAndCompute(img2, cv::Mat(), kp2, d2);
@@ -77,24 +79,58 @@ void GenCorrespondenceFromGridMatch(cv::Mat &img1, cv::Mat &img2, std::vector<st
 
 	cout << "Get total " << matches_grid.size() << " matches." << endl;
 	cv::Mat show = DrawInlier(img1, img2, kp1, kp2, matches_grid, 2);
-	ImgShow("matching result", show, 1024, 424);
-
+	if (isshow) {
+		ImgShow("matching result", show, 1024, 424);
+	}
 	// save to corres
 	corres.resize(matches_grid.size());
 	int size = corres.size();
 	for (int i = 0; i < size; i++) {
-		corres[i].first = kp1[matches_grid[i].queryIdx].pt.y * 512 + kp1[matches_grid[i].queryIdx].pt.x;
-		corres[i].second = kp2[matches_grid[i].trainIdx].pt.y * 512 + kp2[matches_grid[i].trainIdx].pt.x;
+		corres[i].first = kp1[matches_grid[i].queryIdx].pt;
+		corres[i].second = kp2[matches_grid[i].trainIdx].pt;
 	}
 	
 }
 
-// display the color and depth matching
-void GenCorrespondencMatchingBetweenRGBDEP(cv::Mat &depth, cv::Mat color, std::vector<std::pair<int, int>> &corres, const int p) {
+// utility
+inline cv::Mat VerifyDrawInlier(cv::Mat &src1, cv::Mat &src2, std::vector<std::pair<cv::Point2f, cv::Point2f>> &corres, int type = 2) {
+	const int height = max(src1.rows, src2.rows);
+	const int width = src1.cols + src2.cols;
+	cv::Mat output(height, width, CV_8UC3, cv::Scalar(0, 0, 0));
+	src1.copyTo(output(cv::Rect(0, 0, src1.cols, src1.rows)));
+	src2.copyTo(output(cv::Rect(src1.cols, 0, src2.cols, src2.rows)));
+
+	if (type == 1)
+	{
+		for (size_t i = 0; i < corres.size(); i++)
+		{
+			cv::Point2f left(corres[i].first);
+			cv::Point2f right = (cv::Point2f(corres[i].second) + cv::Point2f((float)src1.cols, 0.f));
+			line(output, left, right, cv::Scalar(0, 255, 255));
+		}
+	}
+	else if (type == 2)
+	{
+		for (size_t i = 0; i < corres.size(); i++)
+		{
+			cv::Point2f left(corres[i].first);
+			cv::Point2f right = (cv::Point2f(corres[i].second) + cv::Point2f((float)src1.cols, 0.f));
+			//line(output, left, right, cv::Scalar(255, 0, 0));
+			circle(output, left, 1, cv::Scalar(0, 255, 255), 2);
+			circle(output, right, 1, cv::Scalar(0, 255, 0), 2);
+		}
+	}
+	return output;
+}
+
+/*
+	using point feature histogram to filtering the color correspondence 3D point set to provide accurate correspondence
+	IN: src point+normal, dst point+normal, corres, sensor
+	Out: filtered correspondence set
+*/
+inline void PointFeatureHistogramFiltering(std::vector<Eigen::Vector4f> &srcP, std::vector<Eigen::Vector4f> &srcN, std::vector<Eigen::Vector4f> &dstP, std::vector<Eigen::Vector4f> &dstN,
+	std::vector<std::pair<cv::Point2f, cv::Point2f>> &corres,
+	std::vector<std::pair<cv::Point2f, cv::Point2f>> &result, int isshow = 0) {
 
 }
 
-// reject false color match coordinates with depth image
-void FalseMatchingRejection(cv::Mat &dsrc, cv::Mat &ddst, std::vector<std::pair<int, int>> &corres) {
-
-}

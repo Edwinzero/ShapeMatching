@@ -79,28 +79,6 @@ namespace CORRES {
 	}
 
 
-
-	void ProjectiveCorresondence(cv::Mat srcD, std::vector<Eigen::Vector4f> &srcP, std::vector<Eigen::Vector4f> &srcN, std::vector<Eigen::Vector4f> &dstP, std::vector<Eigen::Vector4f> &dstN,
-		Eigen::Matrix4f &msrc, Eigen::Matrix4f &mdst,
-		std::vector<pair<int, int>> &corres, Sensor &sensor, float scale = 1.0f) {
-		corres.clear();
-		cv::Mat intr = sensor.cali_ir.intr.IntrVec();
-		float fx = intr.at<double>(0);
-		float fy = intr.at<double>(1);
-		float cx = intr.at<double>(2);
-		float cy = intr.at<double>(3);
-
-		// extract R and T from mdst
-		Eigen::Matrix3f R = mdst.block<3, 3>(0, 0);
-		Eigen::Vector3f t = mdst.block<3, 1>(0, 3);
-
-		// for each pixel in depthP
-		for (int y = 0; y < 424; y++) {
-			for (int x = 0; x < 512; x++) {
-
-			}
-		}
-	}
 };
 
 

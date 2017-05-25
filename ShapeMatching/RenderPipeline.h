@@ -80,6 +80,7 @@ PointCloud Kpcs0, Kpcs1;
 GLmem Kobjs0, Kobjs1;
 cv::Mat deps0, deps1;
 cv::Mat rgbs0, rgbs1;
+std::vector < std::pair < cv::Point2f, cv::Point2f > > scorres0;
 // bf
 PointCloud Kpc_0, Kpc_1, Kpc_2, Kpc_3;
 GLmem Kobject_0, Kobject_1, Kobject_2, Kobject_3;
@@ -524,9 +525,9 @@ void drawGUI()
 	// 2. Show another simple window, this time using an explicit Begin/End pair
 	if (show_cameraInfo_window)
 	{
-		ImGui::SetNextWindowSize(ImVec2(200, 100), ImGuiSetCond_FirstUseEver);
+		ImGui::SetNextWindowSize(ImVec2(200, 150), ImGuiSetCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ImVec2(0, screenHeight-350), ImGuiSetCond_FirstUseEver);
-		ImGui::Begin("Another Window", &show_cameraInfo_window);
+		ImGui::Begin("Camera Info", &show_cameraInfo_window);
 		ImGui::Text("Camera information");
 		glm::vec3 campos = camera.GetPos();
 		ImGui::Text("Camera position: (%.3f, %.3f, %.3f)", campos.x, campos.y, campos.z);
@@ -545,8 +546,8 @@ void drawGUI()
 	//}
 
 	if (show_instruction_window) {
-		ImGui::SetNextWindowSize(ImVec2(200, 100), ImGuiSetCond_FirstUseEver);
-		ImGui::SetNextWindowPos(ImVec2(150, 20), ImGuiSetCond_FirstUseEver);
+		ImGui::SetNextWindowSize(ImVec2(200, 150), ImGuiSetCond_FirstUseEver);
+		ImGui::SetNextWindowPos(ImVec2(0, screenHeight - 350), ImGuiSetCond_FirstUseEver);
 		ImGui::Begin("User Instruction", &show_color_img_window, ImGuiWindowFlags_AlwaysAutoResize);
 		ImGui::Text("Key 9: turn on/off display upper camera data");
 		ImGui::Text("Key 0: turn on/off display upper camera data");
@@ -676,13 +677,13 @@ void CLImageProcess() {
 			clprocess.DepthToRGBMapping(bfsensors[0].cali_ir.intr.IntrVec(), bfsensors[0].dep_to_rgb,
 				bfsensors[0].cali_rgb.intr.IntrVec(),
 				(unsigned short*)depth_0.ptr(), color_0, res0, Kpc_0.points);
-			ImgShow("CL RGBDmapping K0", res0, 512, 424);
+			//ImgShow("CL RGBDmapping K0", res0, 512, 424);
 
 
 			clprocess.DepthToRGBMapping(bfsensors[0].cali_ir.intr.IntrVec(), bfsensors[0].dep_to_rgb,
 				bfsensors[0].cali_rgb.intr.IntrVec(), 
 				(unsigned short*)depth_2.ptr(), color_2, res2, Kpc_2.points);
-			ImgShow("CL RGBDmapping K0", res2, 512, 424);
+			//ImgShow("CL RGBDmapping K0", res2, 512, 424);
 
 			clprocess.BackProjectPointsShang(bfsensors[0].cali_ir.intr.IntrVec(), bfsensors[0].cali_ir.extr, (unsigned short*)depth_0.ptr(), Kpc_0.points, Kpc_0.normals);
 			CreateGLmem(Kobject_0, Kpc_0);
@@ -698,13 +699,13 @@ void CLImageProcess() {
 			clprocess.DepthToRGBMapping(bfsensors[1].cali_ir.intr.IntrVec(), bfsensors[1].dep_to_rgb,
 				bfsensors[1].cali_rgb.intr.IntrVec(), 
 				(unsigned short*)depth_1.ptr(), color_1, res1, Kpc_1.points);
-			ImgShow("CL RGBDmapping K1", res1, 512, 424);
+			//ImgShow("CL RGBDmapping K1", res1, 512, 424);
 
 
 			clprocess.DepthToRGBMapping(bfsensors[1].cali_ir.intr.IntrVec(), bfsensors[1].dep_to_rgb,
 				bfsensors[1].cali_rgb.intr.IntrVec(), 
 				(unsigned short*)depth_3.ptr(), color_3, res3, Kpc_3.points);
-			ImgShow("CL RGBDmapping K1", res3, 512, 424);
+			//ImgShow("CL RGBDmapping K1", res3, 512, 424);
 
 
 
@@ -763,7 +764,10 @@ void CLImageProcess() {
 			//GenCorrespondenceFromGridMatch(res3, res1, corres1);
 			//printf("[res3 -> res1] :: << GMS filter >> coorespondence set size: %d\n", corres1.size());
 		
-		
+			GenCorrespondenceFromGridMatch(sres2, sres1, scorres0, 2);
+			printf("[sres2 -> sres1] :: << GMS filter >> coorespondence set size: %d\n", scorres0.size());
+			cv::Mat show = VerifyDrawInlier(sres2, sres1, scorres0);
+			ImgShow("verify matching result", show, 1024, 424);
 	}
 
 	// correspondence finding
@@ -1194,7 +1198,7 @@ void Init_RenderScene(void) {
 	}
 
 	// Load images
-	if (1) {
+	if (0) {
 		char filepath[64];
 		//sprintf(filepath, "Data/K1/Pose_%d.jpeg", 666);
 		//sprintf(filepath, "Data/BF/People0/K1/CPose%d_0.png", 1);
@@ -1239,20 +1243,24 @@ void Init_RenderScene(void) {
 	}
 	if (SHANG) { // home capture
 		char filepath[64];
-		sprintf(filepath, "Data/SHANG/Seq2/Pose_%d.jpeg", 822);
+		//sprintf(filepath, "Data/SHANG/Seq2/Pose_%d.jpeg", 822);
+		sprintf(filepath, "Data/SHANG/Seq1/Pose_%d.jpeg", 705);
 		cv::Mat tmp0;
 		tmp0 = cv::imread(filepath, CV_LOAD_IMAGE_COLOR);
 		cv::undistort(tmp0, rgbs0, bfsensors[0].cali_rgb.intr.cameraMatrix, bfsensors[0].cali_rgb.intr.distCoeffs);
 
-		sprintf(filepath, "Data/SHANG/Seq2/Pose_%d.jpeg", 836);
+		//sprintf(filepath, "Data/SHANG/Seq2/Pose_%d.jpeg", 836);
+		sprintf(filepath, "Data/SHANG/Seq1/Pose_%d.jpeg", 697);
 		cv::Mat tmp1;
 		tmp1 = cv::imread(filepath, CV_LOAD_IMAGE_COLOR);
 		cv::undistort(tmp1, rgbs1, bfsensors[1].cali_rgb.intr.cameraMatrix, bfsensors[1].cali_rgb.intr.distCoeffs);
 
-		sprintf(filepath, "Data/SHANG/Seq2/Pose_%d.png", 822);
+		//sprintf(filepath, "Data/SHANG/Seq2/Pose_%d.png", 822);
+		sprintf(filepath, "Data/SHANG/Seq1/Pose_%d.png", 705);
 		deps0 = cv::imread(filepath, CV_LOAD_IMAGE_ANYDEPTH);
 
-		sprintf(filepath, "Data/SHANG/Seq2/Pose_%d.png", 836);
+		//sprintf(filepath, "Data/SHANG/Seq2/Pose_%d.png", 836);
+		sprintf(filepath, "Data/SHANG/Seq1/Pose_%d.png", 697);
 		deps1 = cv::imread(filepath, CV_LOAD_IMAGE_ANYDEPTH);
 	}
 	// bilaterial filter for depth image
