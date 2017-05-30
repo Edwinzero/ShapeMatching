@@ -768,6 +768,17 @@ void CLImageProcess() {
 			printf("[sres2 -> sres1] :: << GMS filter >> coorespondence set size: %d\n", scorres0.size());
 			cv::Mat show = VerifyDrawInlier(sres2, sres1, scorres0);
 			ImgShow("verify matching result", show, 1024, 424);
+			PFHEsitmator est1, est2;
+			vector<Eigen::Vector4f> gmsPt2, gmsPt1, gmsN2, gmsN1;
+			for (int i = 0; i < scorres0.size(); i++) {
+				std::pair<cv::Point2f, cv::Point2f> tmp = scorres0[i];
+				gmsPt2.push_back(Kpcs1.points[tmp.first.y * 512 + tmp.first.x]);
+				gmsN2.push_back(Kpcs1.normals[tmp.first.y * 512 + tmp.first.x]);
+				gmsPt1.push_back(Kpcs0.points[tmp.first.y * 512 + tmp.first.x]);
+				gmsN1.push_back(Kpcs0.normals[tmp.first.y * 512 + tmp.first.x]);
+			}
+			est1.SetProcessingData(gmsPt1, gmsN1);
+			est1.ComputeSPFHfeatures();
 	}
 
 	// correspondence finding
