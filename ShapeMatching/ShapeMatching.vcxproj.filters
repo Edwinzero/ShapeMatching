@@ -170,6 +170,9 @@
     <ClInclude Include="DebugHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="pcl_op.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="IMGUI\imgui.ini">

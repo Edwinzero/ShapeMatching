@@ -161,6 +161,8 @@ public:
 
 	std::vector<VectorXf> feature;
 
+	VectorXf fpfh_histogram_;
+	Eigen::MatrixXf  hist_t_, hist_a_, hist_p_;
 
 public:
 	PFHEsitmator() : knn_radius_(0), k_(0) {	}
@@ -265,6 +267,30 @@ public:
 		if (size != countPhi) printf("Entry missing in phi SPFH histogram\n");
 	}
 
+	/**
+	 compute FPFH feature and return the feature set correspondent to the input points data
+	 [out] feature set
+	**/
+	void computeFeature(std::vector<Eigen::VectorXf> &output) {
+		std::vector<int> nn_indices(k_);
+		std::vector<float> nn_dists(k_);
+		std::vector<int> spfh_hist_lookup;
+		ComputeSPFHSignatures(spfh_hist_lookup, hist_t_, hist_a_, hist_p_);
+
+		for (int idx = 0; idx < pointsPtr.size(); idx++) {
+			// ... and remap the nn_indices values so that they represent row indices in the spfh_hist_* matrices 
+			// instead of indices into surface_->points
+			for (size_t i = 0; i < nn_indices.size(); ++i)
+				nn_indices[i] = spfh_hist_lookup[nn_indices[i]];
+			// Compute the FPFH signature (i.e. compute a weighted combination of local SPFH signatures) ...
+			WeightPointSPFHSignature(hist_t_, hist_a_, hist_p_, nn_indices, nn_dists, fpfh_histogram_);
+
+			// ...and copy it into the output cloud
+			for (int d = 0; d < fpfh_histogram_.size(); ++d)
+				output.push_back(fpfh_histogram_);
+		}
+	}
+
 
 private:
 	/** \brief Compute the 4-tuple representation containing the three angles and one distance between two points
@@ -314,7 +340,7 @@ private:
 		// Iterate over all the points in the neighborhood
 		/// \brief Float constant = 1.0 / (2.0 * M_PI) 
 		float d_pi = 1.0f / (2.0f * static_cast<float> (3.1415926f));
-		for (int i = 0; i < nnIdx.size; i++) {
+		for (int i = 0; i < nnIdx.size(); i++) {
 			if (pid == nnIdx[i]) {
 				continue;
 			}
@@ -401,7 +427,7 @@ private:
 	}
 
 	void ComputeSPFHSignatures(std::vector<int> &spfh_hist_lookup,
-		Eigen::MatrixXf &hist_f1, Eigen::MatrixXf &hist_f2, Eigen::MatrixXf &hist_f3) {
+		Eigen::MatrixXf &hist_t, Eigen::MatrixXf &hist_a, Eigen::MatrixXf &hist_p) {
 		// allocate space to hold the NN search results
 		std::vector<int> nn_indices(k_);
 		std::vector<float> nn_dists(k_);
@@ -425,8 +451,29 @@ private:
 		}
 		::flann::KDTreeSingleIndex<::flann::L2<float>> feature_tree(dataset_mat_fi, ::flann::KDTreeSingleIndexParams(15));
 		feature_tree.buildIndex();
-		for (int i = 0; i < pointsPtr.size(); i++) {
-			
+		for (int i = 0; i < pointsPtr.size(); i++) {  // iterate all indices
+			SearchFLANNTree(&feature_tree, pointsPtr[i], nn_indices, nn_dists, 5);
+			spfh_indices.insert(nn_indices.begin(), nn_indices.end());
+		}
+
+		// initial array that will store the SPFH signatures
+		size_t data_size = spfh_indices.size();
+		hist_t.setZero(data_size, 11);			// default is 11
+		hist_a.setZero(data_size, 11);
+		hist_p.setZero(data_size, 11);
+
+		// Compute SPFH signatures for every point that needs them
+		std::set<int>::iterator spfh_indice_itr = spfh_indices.begin();
+		for (int i = 0; i < static_cast<int>(spfh_indices.size()); ++i) {
+			int pid = *spfh_indice_itr;
+			++spfh_indice_itr;
+
+			// find neighbor around pidx
+			SearchFLANNTree(&feature_tree, pointsPtr[pid], nn_indices, nn_dists, 5);
+			// Estimate the SPFH signature around pidx
+			ComputePointSPFHSignature(pid, i, nn_indices, hist_t, hist_a, hist_p);
+			// Populate a lookup table for converting a point index to its corresponding row in the spfh_hist_* matrices
+			spfh_hist_lookup[pid] = i;
 		}
 	}
 };

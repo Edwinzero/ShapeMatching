@@ -29,6 +29,13 @@
 #include <SIFTmatching.h>
 #include <GMSmatching.h>
 #include <CorrespondenceFinding.h>
+// PCL (have to add pcl)
+#include <pcl/io/pcd_io.h>
+#include <pcl/point_types.h>
+#include <pcl/features/fpfh.h>
+#include <pcl/features/normal_3d.h>
+#include <pcl/search/pcl_search.h>
+#include <pcl_op.h>
 
 // Debug helper
 #include <DebugHelper.h>
@@ -768,7 +775,7 @@ void CLImageProcess() {
 			printf("[sres2 -> sres1] :: << GMS filter >> coorespondence set size: %d\n", scorres0.size());
 			cv::Mat show = VerifyDrawInlier(sres2, sres1, scorres0);
 			ImgShow("verify matching result", show, 1024, 424);
-			PFHEsitmator est1, est2;
+
 			vector<Eigen::Vector4f> gmsPt2, gmsPt1, gmsN2, gmsN1;
 			for (int i = 0; i < scorres0.size(); i++) {
 				std::pair<cv::Point2f, cv::Point2f> tmp = scorres0[i];
@@ -777,8 +784,21 @@ void CLImageProcess() {
 				gmsPt1.push_back(Kpcs0.points[tmp.first.y * 512 + tmp.first.x]);
 				gmsN1.push_back(Kpcs0.normals[tmp.first.y * 512 + tmp.first.x]);
 			}
-			est1.SetProcessingData(gmsPt1, gmsN1);
-			est1.ComputeSPFHfeatures();
+
+			// pcl
+			pcl::PointCloud<pcl::FPFHSignature33>::Ptr pfh_features1(new pcl::PointCloud<pcl::FPFHSignature33>);
+			PCLfpfhEstimation(pfh_features1, gmsPt1, gmsN1);
+			std::cout << "output points.size (): " << pfh_features1->points.size() << std::endl;
+			// Display and retrieve the shape context descriptor vector for the 0th point.
+			pcl::FPFHSignature33 descriptor1 = pfh_features1->points[0];
+			std::cout << descriptor1 << std::endl;
+
+			pcl::PointCloud<pcl::FPFHSignature33>::Ptr pfh_features2(new pcl::PointCloud<pcl::FPFHSignature33>);
+			PCLfpfhEstimation(pfh_features2, gmsPt2, gmsN2);
+			std::cout << "output points.size (): " << pfh_features2->points.size() << std::endl;
+			// Display and retrieve the shape context descriptor vector for the 0th point.
+			pcl::FPFHSignature33 descriptor2 = pfh_features2->points[0];
+			std::cout << descriptor2 << std::endl;
 	}
 
 	// correspondence finding
