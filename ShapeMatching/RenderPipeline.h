@@ -25,10 +25,6 @@
 #include <RGBDmappingCPU.h>
 #include <GaussianNoise.h>
 
-// Feature
-#include <SIFTmatching.h>
-#include <GMSmatching.h>
-#include <CorrespondenceFinding.h>
 // PCL (have to add pcl)
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
@@ -36,6 +32,11 @@
 #include <pcl/features/normal_3d.h>
 #include <pcl/search/pcl_search.h>
 #include <pcl_op.h>
+
+// Feature
+#include <SIFTmatching.h>
+#include <GMSmatching.h>
+#include <CorrespondenceFinding.h>
 
 // Debug helper
 #include <DebugHelper.h>

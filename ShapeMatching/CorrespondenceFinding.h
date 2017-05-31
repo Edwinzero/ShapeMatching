@@ -78,7 +78,34 @@ namespace CORRES {
 		}
 	}
 
+	/*
+		- reduce the false matching from color feature pair
+		[in] fpfh features 1
+		[in] fpfh features 2
+		[out] correspondence
+	*/
+	void PointsFeatureFalseRejection(pcl::PointCloud<pcl::FPFHSignature33>::Ptr pfh_f1, pcl::PointCloud<pcl::FPFHSignature33>::Ptr pfh_f2,
+		std::vector<std::pair<int, int>> &corres) {
+		if (pfh_f1->size() != pfh_f2->size()) {
+			printf("<< PointFeature FalseRejection >> size doesn't match...\n");
+			return;
+		}
+		int rows = pfh_f1->size();
+		int dim = 33;
+		std::vector<float> dataset_f1(rows * dim);
+		::flann::Matrix<float> dataset_mat_f1(&dataset_f1[0], rows, dim);
 
+		for (int y = 0; y < rows; y++) {
+			for (int x = 0; x < dim; x++) {
+				dataset_f1[x + dim*y] = pfh_f1->at(y).histogram[x];
+			}
+		}
+		::flann::Index<::flann::L2<float>> feature_tree_i(dataset_mat_f1, ::flann::KDTreeSingleIndexParams(15));
+		feature_tree_i.buildIndex();
+
+		// for each point in pfh_f2,search closet data in pfh_f1 kdtree
+
+	}
 };
 
 
