@@ -800,6 +800,21 @@ void CLImageProcess() {
 			// Display and retrieve the shape context descriptor vector for the 0th point.
 			pcl::FPFHSignature33 descriptor2 = pfh_features2->points[0];
 			std::cout << descriptor2 << std::endl;
+
+			int countfinal = 0;
+			std::vector<std::pair<cv::Point2f, cv::Point2f>> filteredcandi;
+			for (int i = 0; i < pfh_features1->size(); i++) {
+				if (PCLcompareFPFHfeature(pfh_features1->at(i), pfh_features2->at(i))) {
+					countfinal++;
+					//printf("find same feature\n");
+					filteredcandi.push_back(scorres0[i]);
+				}
+			}
+			printf("exact same feature number is: %d\n", countfinal);
+
+			// convert match to cv::keypoint and use verify inlier to display result
+			cv::Mat checkshow = VerifyDrawInlier(sres2, sres1, filteredcandi);
+			ImgShow("filtered matching result", checkshow, 1024, 424);
 	}
 
 	// correspondence finding

@@ -78,6 +78,25 @@ namespace CORRES {
 		}
 	}
 
+	inline void SearchFLANNTree(::flann::Index<::flann::L2<float>>* index, VectorXf& input, std::vector<int>& indices, std::vector<float>& dists, int nn)
+	{
+		int rows_t = 1;
+		int dim = input.size();
+
+		std::vector<float> query;
+		query.resize(rows_t*dim);
+		for (int i = 0; i < dim; i++)
+			query[i] = input(i);
+		::flann::Matrix<float> query_mat(&query[0], rows_t, dim);
+
+		indices.resize(rows_t*nn);
+		dists.resize(rows_t*nn);
+		::flann::Matrix<int> indices_mat(&indices[0], rows_t, nn);
+		::flann::Matrix<float> dists_mat(&dists[0], rows_t, nn);
+
+		index->knnSearch(query_mat, indices_mat, dists_mat, nn, ::flann::SearchParams(128));
+	}
+
 	/*
 		- reduce the false matching from color feature pair
 		[in] fpfh features 1
@@ -91,7 +110,8 @@ namespace CORRES {
 			return;
 		}
 		int rows = pfh_f1->size();
-		int dim = 33;
+		int dim = pfh_f1->at(0).descriptorSize();   // check 33
+		// build tree for pfh_f1
 		std::vector<float> dataset_f1(rows * dim);
 		::flann::Matrix<float> dataset_mat_f1(&dataset_f1[0], rows, dim);
 
@@ -100,11 +120,45 @@ namespace CORRES {
 				dataset_f1[x + dim*y] = pfh_f1->at(y).histogram[x];
 			}
 		}
-		::flann::Index<::flann::L2<float>> feature_tree_i(dataset_mat_f1, ::flann::KDTreeSingleIndexParams(15));
-		feature_tree_i.buildIndex();
+		::flann::Index<::flann::L2<float>> feature_tree_f1(dataset_mat_f1, ::flann::KDTreeSingleIndexParams(15));
+		feature_tree_f1.buildIndex();
+		// build tree for pfh_f2
+		std::vector<float> dataset_f2(rows * dim);
+		::flann::Matrix<float> dataset_mat_f2(&dataset_f2[0], rows, dim);
 
+		for (int y = 0; y < rows; y++) {
+			for (int x = 0; x < dim; x++) {
+				dataset_f2[x + dim*y] = pfh_f2->at(y).histogram[x];
+			}
+		}
+		::flann::Index<::flann::L2<float>> feature_tree_f2(dataset_mat_f2, ::flann::KDTreeSingleIndexParams(15));
+		feature_tree_f2.buildIndex();
+
+		// initial matching
 		// for each point in pfh_f2,search closet data in pfh_f1 kdtree
-
+		std::vector<int> corres_K1, corres_K2;
+		std::vector<float> dis;
+		std::vector<int> ind;
+		std::vector<int> f1_to_f2(rows, -1);
+		for (int j = 0; j < rows; j++) {
+			Eigen::VectorXf featuref2(33);
+			for (int k = 0; k < 33; k++) {
+				featuref2(k) = pfh_f2->at(j).histogram[k];
+			}
+			//std::cout << featuref2 << std::endl;
+			SearchFLANNTree(&feature_tree_f1, featuref2, corres_K1, dis, 1);				// use f2 to search in f1
+			int i = corres_K1[0];
+			if (f1_to_f2[i] == -1) { // means there is no correspondence stored yet
+				Eigen::VectorXf featuref1(33);
+				for (int k = 0; k < 33; k++) {
+					featuref1(k) = pfh_f1->at(i).histogram[k];
+				}
+				SearchFLANNTree(&feature_tree_f2, featuref1, corres_K1, dis, 1);
+				f1_to_f2[i] = corres_K1[0];
+			}
+			corres.push_back(std::pair<int, int>(i, j));
+		}
+		printf("<< PointFeature FalseRejection >> points are remained : %d\n", (int)corres.size());
 	}
 };
 

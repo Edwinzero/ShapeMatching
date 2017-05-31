@@ -32,4 +32,13 @@ void PCLfpfhEstimation(pcl::PointCloud<pcl::FPFHSignature33>::Ptr pfh_features, 
 	fpfh_estimation.compute(*pfh_features);
 }
 
+bool PCLcompareFPFHfeature(pcl::FPFHSignature33 f1, pcl::FPFHSignature33 f2) {
+	for (int i = 0; i < 33; i++) {
+		if (f1.histogram[i] != f2.histogram[i]) {
+			return false;
+		}
+	}
+	return true;
+}
+
 #endif /*_PCL_OP_H*/
